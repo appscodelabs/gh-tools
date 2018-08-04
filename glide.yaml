@@ -1,0 +1,9 @@
+package: github.com/appscodelabs/gh-tools
+import:
+- package: github.com/appscode/go
+  version: master
+- package: github.com/jpillora/go-ogle-analytics
+- package: github.com/spf13/cobra
+  version: v0.0.3
+- package: github.com/spf13/pflag
+  version: v1.0.1
