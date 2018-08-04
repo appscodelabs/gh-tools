@@ -23,13 +23,13 @@ func NewCmdProtect() *cobra.Command {
 		Short:             "Protect master and release-* repos",
 		DisableAutoGenTag: true,
 		Run: func(cmd *cobra.Command, args []string) {
-			run()
+			runProtect()
 		},
 	}
 	return cmd
 }
 
-func run() {
+func runProtect() {
 	token, found := os.LookupEnv("GH_TOOLS_TOKEN")
 	if !found {
 		log.Fatalln("GH_TOOLS_TOKEN env var is not set")
@@ -79,7 +79,6 @@ func run() {
 				continue
 			}
 			if repo.GetPermissions()["admin"] {
-				fmt.Println(">>> ", repo.GetFullName())
 				ProtectRepo(ctx, client, repo)
 			}
 		}
