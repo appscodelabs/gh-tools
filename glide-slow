@@ -5,7 +5,7 @@
 # - ???
 # - Profit
 
-pushd $GOPATH/src/github.com/appscode/gh-tools
+pushd $GOPATH/src/github.com/appscodelabs/gh-tools
 
 glide up -v
 glide vc --only-code --no-tests

@@ -40,7 +40,7 @@ func NewRootCmd(version string) *cobra.Command {
 	flag.CommandLine.Parse([]string{})
 	cmd.PersistentFlags().BoolVar(&enableAnalytics, "analytics", enableAnalytics, "Send analytical events to Google Guard")
 
-	cmd.AddCommand(NewCmdHello())
+	cmd.AddCommand(NewCmdProtect())
 	cmd.AddCommand(v.NewCmdVersion())
 	return cmd
 }
