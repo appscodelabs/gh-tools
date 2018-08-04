@@ -180,7 +180,7 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			DismissStaleReviews:     true,
 			RequireCodeOwnerReviews: true,
 		},
-		EnforceAdmins: true,
+		// EnforceAdmins: true,
 		Restrictions: &github.BranchRestrictionsRequest{
 			Users: []string{},
 			Teams: []string{},
