@@ -1,2 +1,2 @@
 # gh-tools
-Tools for managing GitHub repos
+Seed CLI
