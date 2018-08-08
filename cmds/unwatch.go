@@ -2,6 +2,7 @@ package cmds
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
 	"sort"
@@ -9,7 +10,6 @@ import (
 	"github.com/google/go-github/github"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
-	"fmt"
 )
 
 var (
