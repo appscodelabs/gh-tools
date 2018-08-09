@@ -81,7 +81,7 @@ func runRelease(owner, repo string, draft, prerelease bool) {
 
 	//upload all files present in dist
 	dirToWalk := "dist"
-	subDirToSkip := "dist/" + repo + "/local"
+	subDirToSkip := "local"
 	err = filepath.Walk(dirToWalk, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -90,7 +90,7 @@ func runRelease(owner, repo string, draft, prerelease bool) {
 			return filepath.SkipDir
 		}
 		if !info.IsDir() && info.Name() != "CHANGELOG.md" {
-			log.Println("uploading ", path)
+			log.Println("uploading ", info.Name())
 
 			file, err := os.Open(path)
 			if err != nil {
@@ -104,7 +104,7 @@ func runRelease(owner, repo string, draft, prerelease bool) {
 				repo,
 				*release.ID,
 				&github.UploadOptions{
-					Name: file.Name(),
+					Name: info.Name(),
 				},
 				file,
 			)

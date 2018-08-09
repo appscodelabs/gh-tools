@@ -1,5 +1,5 @@
 hash: 0c8830b2a9204f0836da01d2e34476b51521167bfeb44e5982eeb5fb02096160
-updated: 2018-08-09T11:22:09.398285263+06:00
+updated: 2018-08-09T17:04:12.135759958+06:00
 imports:
 - name: github.com/apex/log
   version: 941dea75d3ebfbdd905a5d8b7b232965c5e5c684
@@ -20,7 +20,7 @@ imports:
   subpackages:
   - proto
 - name: github.com/google/go-github
-  version: e7bb4b8ce29fb7beaf0765acda602bc516a56dd5
+  version: 8c40ff417df53f2b031ca687be1b2e0bd7aa8fe9
   subpackages:
   - github
 - name: github.com/google/go-querystring
@@ -62,4 +62,16 @@ imports:
   - urlfetch
 - name: gopkg.in/yaml.v2
   version: 5420a8b6744d3b0345ab293f6fcba19c978f1183
-testImports: []
+testImports:
+- name: github.com/davecgh/go-spew
+  version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
+  subpackages:
+  - spew
+- name: github.com/pmezard/go-difflib
+  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  subpackages:
+  - difflib
+- name: github.com/stretchr/testify
+  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
+  subpackages:
+  - assert

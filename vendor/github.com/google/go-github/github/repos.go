@@ -7,7 +7,6 @@ package github
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 )
@@ -179,7 +178,7 @@ func (s *RepositoriesService) List(ctx context.Context, user string, opt *Reposi
 	}
 
 	// TODO: remove custom Accept headers when APIs fully launch.
-	acceptHeaders := []string{mediaTypeLicensesPreview, mediaTypeCodesOfConductPreview, mediaTypeTopicsPreview}
+	acceptHeaders := []string{mediaTypeCodesOfConductPreview, mediaTypeTopicsPreview}
 	req.Header.Set("Accept", strings.Join(acceptHeaders, ", "))
 
 	var repos []*Repository
@@ -217,7 +216,7 @@ func (s *RepositoriesService) ListByOrg(ctx context.Context, org string, opt *Re
 	}
 
 	// TODO: remove custom Accept headers when APIs fully launch.
-	acceptHeaders := []string{mediaTypeLicensesPreview, mediaTypeCodesOfConductPreview, mediaTypeTopicsPreview}
+	acceptHeaders := []string{mediaTypeCodesOfConductPreview, mediaTypeTopicsPreview}
 	req.Header.Set("Accept", strings.Join(acceptHeaders, ", "))
 
 	var repos []*Repository
@@ -298,7 +297,7 @@ func (s *RepositoriesService) Get(ctx context.Context, owner, repo string) (*Rep
 
 	// TODO: remove custom Accept header when the license support fully launches
 	// https://developer.github.com/v3/licenses/#get-a-repositorys-license
-	acceptHeaders := []string{mediaTypeLicensesPreview, mediaTypeCodesOfConductPreview, mediaTypeTopicsPreview}
+	acceptHeaders := []string{mediaTypeCodesOfConductPreview, mediaTypeTopicsPreview}
 	req.Header.Set("Accept", strings.Join(acceptHeaders, ", "))
 
 	repository := new(Repository)
@@ -341,10 +340,6 @@ func (s *RepositoriesService) GetByID(ctx context.Context, id int64) (*Repositor
 	if err != nil {
 		return nil, nil, err
 	}
-
-	// TODO: remove custom Accept header when the license support fully launches
-	// https://developer.github.com/v3/licenses/#get-a-repositorys-license
-	req.Header.Set("Accept", mediaTypeLicensesPreview)
 
 	repository := new(Repository)
 	resp, err := s.client.Do(ctx, req, repository)
@@ -558,6 +553,12 @@ type RequiredStatusChecks struct {
 	Contexts []string `json:"contexts"`
 }
 
+// RequiredStatusChecksRequest represents a request to edit a protected branch's status checks.
+type RequiredStatusChecksRequest struct {
+	Strict   *bool    `json:"strict,omitempty"`
+	Contexts []string `json:"contexts,omitempty"`
+}
+
 // PullRequestReviewsEnforcement represents the pull request reviews enforcement of a protected branch.
 type PullRequestReviewsEnforcement struct {
 	// Specifies which users and teams can dismiss pull request reviews.
@@ -572,39 +573,14 @@ type PullRequestReviewsEnforcement struct {
 // enforcement of a protected branch. It is separate from PullRequestReviewsEnforcement above
 // because the request structure is different from the response structure.
 type PullRequestReviewsEnforcementRequest struct {
-	// Specifies which users and teams should be allowed to dismiss pull request reviews. Can be nil to disable the restrictions.
-	DismissalRestrictionsRequest *DismissalRestrictionsRequest `json:"dismissal_restrictions"`
+	// Specifies which users and teams should be allowed to dismiss pull request reviews.
+	// User and team dismissal restrictions are only available for
+	// organization-owned repositories. Must be nil for personal repositories.
+	DismissalRestrictionsRequest *DismissalRestrictionsRequest `json:"dismissal_restrictions,omitempty"`
 	// Specifies if approved reviews can be dismissed automatically, when a new commit is pushed. (Required)
 	DismissStaleReviews bool `json:"dismiss_stale_reviews"`
 	// RequireCodeOwnerReviews specifies if an approved review is required in pull requests including files with a designated code owner.
 	RequireCodeOwnerReviews bool `json:"require_code_owner_reviews"`
-}
-
-// MarshalJSON implements the json.Marshaler interface.
-// Converts nil value of PullRequestReviewsEnforcementRequest.DismissalRestrictionsRequest to empty array
-func (req PullRequestReviewsEnforcementRequest) MarshalJSON() ([]byte, error) {
-	if req.DismissalRestrictionsRequest == nil {
-		newReq := struct {
-			R []interface{} `json:"dismissal_restrictions"`
-			D bool          `json:"dismiss_stale_reviews"`
-			O bool          `json:"require_code_owner_reviews"`
-		}{
-			R: []interface{}{},
-			D: req.DismissStaleReviews,
-			O: req.RequireCodeOwnerReviews,
-		}
-		return json.Marshal(newReq)
-	}
-	newReq := struct {
-		R *DismissalRestrictionsRequest `json:"dismissal_restrictions"`
-		D bool                          `json:"dismiss_stale_reviews"`
-		O bool                          `json:"require_code_owner_reviews"`
-	}{
-		R: req.DismissalRestrictionsRequest,
-		D: req.DismissStaleReviews,
-		O: req.RequireCodeOwnerReviews,
-	}
-	return json.Marshal(newReq)
 }
 
 // PullRequestReviewsEnforcementUpdate represents request to patch the pull request review
@@ -657,11 +633,12 @@ type DismissalRestrictions struct {
 // restriction to allows only specific users or teams to dimiss pull request reviews. It is
 // separate from DismissalRestrictions above because the request structure is
 // different from the response structure.
+// Note: Both Users and Teams must be nil, or both must be non-nil.
 type DismissalRestrictionsRequest struct {
-	// The list of user logins who can dismiss pull request reviews. (Required; use []string{} instead of nil for empty list.)
-	Users []string `json:"users"`
-	// The list of team slugs which can dismiss pull request reviews. (Required; use []string{} instead of nil for empty list.)
-	Teams []string `json:"teams"`
+	// The list of user logins who can dismiss pull request reviews. (Required; use nil to disable dismissal_restrictions or &[]string{} otherwise.)
+	Users *[]string `json:"users,omitempty"`
+	// The list of team slugs which can dismiss pull request reviews. (Required; use nil to disable dismissal_restrictions or &[]string{} otherwise.)
+	Teams *[]string `json:"teams,omitempty"`
 }
 
 // ListBranches lists branches for the specified repository.
@@ -814,6 +791,25 @@ func (s *RepositoriesService) RemoveBranchProtection(ctx context.Context, owner,
 	req.Header.Set("Accept", mediaTypeProtectedBranchesPreview)
 
 	return s.client.Do(ctx, req, nil)
+}
+
+// UpdateRequiredStatusChecks updates the required status checks for a given protected branch.
+//
+// GitHub API docs: https://developer.github.com/v3/repos/branches/#update-required-status-checks-of-protected-branch
+func (s *RepositoriesService) UpdateRequiredStatusChecks(ctx context.Context, owner, repo, branch string, sreq *RequiredStatusChecksRequest) (*RequiredStatusChecks, *Response, error) {
+	u := fmt.Sprintf("repos/%v/%v/branches/%v/protection/required_status_checks", owner, repo, branch)
+	req, err := s.client.NewRequest("PATCH", u, sreq)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	sc := new(RequiredStatusChecks)
+	resp, err := s.client.Do(ctx, req, sc)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return sc, resp, nil
 }
 
 // License gets the contents of a repository's license if one is detected.
@@ -1043,7 +1039,7 @@ func (s *RepositoriesService) ReplaceAllTopics(ctx context.Context, owner, repo 
 // TransferRequest represents a request to transfer a repository.
 type TransferRequest struct {
 	NewOwner string  `json:"new_owner"`
-	TeamID   []int64 `json:"team_id,omitempty"`
+	TeamID   []int64 `json:"team_ids,omitempty"`
 }
 
 // Transfer transfers a repository from one account or organization to another.
