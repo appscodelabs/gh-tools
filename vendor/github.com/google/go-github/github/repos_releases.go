@@ -251,7 +251,10 @@ func (s *RepositoriesService) DownloadReleaseAsset(ctx context.Context, owner, r
 	if err != nil {
 		return nil, "", err
 	}
-	req.Header.Set("Accept", defaultMediaType)
+
+	// TODO: remove custom Accept header when APIs fully launch.
+	acceptHeaders := []string{defaultMediaType, mediaTypeGraphQLNodeIDPreview}
+	req.Header.Set("Accept", strings.Join(acceptHeaders, ", "))
 
 	s.client.clientMu.Lock()
 	defer s.client.clientMu.Unlock()
