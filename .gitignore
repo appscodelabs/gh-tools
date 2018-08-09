@@ -25,6 +25,9 @@ _testmain.go
 *.test
 *.prof
 
+# binary
+gh-tools
+
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
 
