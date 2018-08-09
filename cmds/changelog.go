@@ -15,19 +15,24 @@ import (
 )
 
 func NewCmdChangelog() *cobra.Command {
+	var sort string
+	var exclude []string
+
 	cmd := &cobra.Command{
 		Use:               "changelog",
 		Short:             "generate changelog",
 		DisableAutoGenTag: true,
 		Run: func(cmd *cobra.Command, args []string) {
-			runChangelog()
+			runChangelog(sort, exclude)
 		},
 	}
+	cmd.Flags().StringVar(&sort, "sort", "asc", "could either be asc, desc or empty")
+	cmd.Flags().StringArrayVar(&exclude, "exclude", []string{"^docs:", "^test:"}, "commit messages matching the regexp listed here will be removed from the changelog")
 	return cmd
 }
 
-func runChangelog() {
-	entries, err := buildChangelog()
+func runChangelog(sort string, exclude []string) {
+	entries, err := buildChangelog(sort, exclude)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -47,8 +52,44 @@ func runChangelog() {
 	}
 }
 
-func sortEntries(entries []string) []string {
-	direction := "asc"
+func buildChangelog(sort string, exclude []string) ([]string, error) {
+	//need current tag
+	tag, err := git.Clean(git.Run("tag", "-l", "--points-at", "HEAD"))
+	if err != nil {
+		return nil, err
+	}
+
+	log, err := getChangelog(tag)
+	if err != nil {
+		return nil, err
+	}
+	var entries = strings.Split(log, "\n")
+	entries = entries[0 : len(entries)-1]
+
+	entries, err = filterEntries(exclude, entries)
+	if err != nil {
+		return entries, err
+	}
+
+	return sortEntries(sort, entries), nil
+}
+
+func filterEntries(filters, entries []string) ([]string, error) {
+	for _, filter := range filters {
+		r, err := regexp.Compile(filter)
+		if err != nil {
+			return entries, err
+		}
+		entries = remove(r, entries)
+	}
+	return entries, nil
+}
+
+func sortEntries(direction string, entries []string) []string {
+	if direction == "" {
+		return entries
+	}
+
 	var result = make([]string, len(entries))
 	copy(result, entries)
 	sort.Slice(result, func(i, j int) bool {
@@ -65,40 +106,6 @@ func sortEntries(entries []string) []string {
 func extractCommitInfo(line string) (hash, msg string) {
 	ss := strings.Split(line, " ")
 	return ss[0], strings.Join(ss[1:], " ")
-}
-
-func buildChangelog() ([]string, error) {
-	//need current tag
-	tag, err := git.Clean(git.Run("tag", "-l", "--points-at", "HEAD"))
-	if err != nil {
-		return nil, err
-	}
-
-	log, err := getChangelog(tag)
-	if err != nil {
-		return nil, err
-	}
-	var entries = strings.Split(log, "\n")
-	entries = entries[0 : len(entries)-1]
-
-	entries, err = filterEntries(entries)
-	if err != nil {
-		return entries, err
-	}
-
-	return sortEntries(entries), nil
-}
-
-func filterEntries(entries []string) ([]string, error) {
-	filters := []string{"^docs:", "^test:"}
-	for _, filter := range filters {
-		r, err := regexp.Compile(filter)
-		if err != nil {
-			return entries, err
-		}
-		entries = remove(r, entries)
-	}
-	return entries, nil
 }
 
 func getChangelog(tag string) (string, error) {
