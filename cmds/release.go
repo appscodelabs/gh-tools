@@ -19,7 +19,7 @@ func NewCmdRelease() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:               "release",
-		Short:             "create release and uploat artifacts stored on dist",
+		Short:             "create release and upload artifacts stored on dist",
 		DisableAutoGenTag: true,
 		Run: func(cmd *cobra.Command, args []string) {
 			runRelease(owner, repo, draft, prerelease)

@@ -1,5 +1,5 @@
-hash: 0c8830b2a9204f0836da01d2e34476b51521167bfeb44e5982eeb5fb02096160
-updated: 2018-08-09T17:04:12.135759958+06:00
+hash: 758f82d0cf002cb384a922daafb35723c24f7e7b2a01b130b69cea3059caea78
+updated: 2018-08-10T20:22:23.416975373+06:00
 imports:
 - name: github.com/apex/log
   version: 941dea75d3ebfbdd905a5d8b7b232965c5e5c684
@@ -20,7 +20,7 @@ imports:
   subpackages:
   - proto
 - name: github.com/google/go-github
-  version: 8c40ff417df53f2b031ca687be1b2e0bd7aa8fe9
+  version: 4430a04b2018f2e2dbee0f3ee44d9ed18c543b16
   subpackages:
   - github
 - name: github.com/google/go-querystring
