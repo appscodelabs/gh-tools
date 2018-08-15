@@ -1,5 +1,5 @@
 hash: 758f82d0cf002cb384a922daafb35723c24f7e7b2a01b130b69cea3059caea78
-updated: 2018-08-10T20:22:23.416975373+06:00
+updated: 2018-08-15T13:11:31.138548538-07:00
 imports:
 - name: github.com/apex/log
   version: 941dea75d3ebfbdd905a5d8b7b232965c5e5c684
@@ -10,17 +10,17 @@ imports:
   - runtime
   - version
 - name: github.com/cpuguy83/go-md2man
-  version: 691ee98543af2f262f35fbb54bdd42f00b9b9cc5
+  version: 71acacd42f85e5e82f70a55327789582a5200a90
   subpackages:
   - md2man
 - name: github.com/golang/glog
-  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
+  version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/protobuf
-  version: 6e4cc92cc905d5f4a73041c1b8228ea08f4c6147
+  version: b4deda0973fb4c70b50d226b1af49f3da59f5265
   subpackages:
   - proto
 - name: github.com/google/go-github
-  version: 4430a04b2018f2e2dbee0f3ee44d9ed18c543b16
+  version: d8bee7566740e39c1c0e2c3990e1e5f348458852
   subpackages:
   - github
 - name: github.com/google/go-querystring
@@ -34,7 +34,9 @@ imports:
 - name: github.com/pkg/errors
   version: 645ef00459ed84a119197bfb8d8205042c6df63d
 - name: github.com/russross/blackfriday
-  version: 11635eb403ff09dbc3a6b5a007ab5ab09151c229
+  version: 300106c228d52c8941d4b3de6054a6062a86dda3
+- name: github.com/shurcooL/sanitized_anchor_name
+  version: 10ef21a441db47d8b13ebcc5fd2310f636973c77
 - name: github.com/spf13/cobra
   version: ef82de70bb3f60c65fb8eebacbb2d122ef517385
   subpackages:
@@ -42,16 +44,15 @@ imports:
 - name: github.com/spf13/pflag
   version: 583c0c0531f06d5278b7d917446061adc344b5cd
 - name: golang.org/x/net
-  version: da118f7b8e5954f39d0d2130ab35d4bf0e3cb344
+  version: 1c05540f6879653db88113bc4a2b70aec4bd491f
   subpackages:
   - context
-  - context/ctxhttp
 - name: golang.org/x/oauth2
-  version: 3d292e4d0cdc3a0113e6d207bb137145ef1de42f
+  version: a6bd8cefa1811bd24b86f8902872e4e8225f74c4
   subpackages:
   - internal
 - name: google.golang.org/appengine
-  version: 4216e58b9158e5f1c906f1aca75162a46a2ec88a
+  version: 12d5545dc1cfa6047a286d5e853841b6471f4c19
   subpackages:
   - internal
   - internal/base
@@ -61,10 +62,10 @@ imports:
   - internal/urlfetch
   - urlfetch
 - name: gopkg.in/yaml.v2
-  version: 5420a8b6744d3b0345ab293f6fcba19c978f1183
+  version: 670d4cfef0544295bc27a114dbac37980d83185a
 testImports:
 - name: github.com/davecgh/go-spew
-  version: 6d212800a42e8ab5c146b8ace3490ee17e5225f9
+  version: 782f4967f2dc4564575ca782fe2d04090b5faca8
   subpackages:
   - spew
 - name: github.com/pmezard/go-difflib
@@ -72,6 +73,6 @@ testImports:
   subpackages:
   - difflib
 - name: github.com/stretchr/testify
-  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
+  version: f35b8ab0b5a2cef36673838d662e249dd9c94686
   subpackages:
   - assert
