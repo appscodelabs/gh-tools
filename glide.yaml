@@ -1,11 +1,21 @@
 package: github.com/appscodelabs/gh-tools
 import:
+- package: github.com/apex/log
 - package: github.com/appscode/go
-  version: master
+  subpackages:
+  - log/golog
+  - runtime
+  - version
+- package: github.com/google/go-github
+  subpackages:
+  - github
 - package: github.com/jpillora/go-ogle-analytics
 - package: github.com/spf13/cobra
-  version: v0.0.3
+  subpackages:
+  - doc
 - package: github.com/spf13/pflag
-  version: v1.0.1
-- package: github.com/google/go-github
-  version: master
+- package: golang.org/x/oauth2
+testImport:
+- package: github.com/stretchr/testify
+  subpackages:
+  - assert
