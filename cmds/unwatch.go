@@ -57,7 +57,7 @@ func runStopWatch() {
 	log.Println("user: ", user.GetLogin())
 
 	{
-		opt := &github.ListOptions{PerPage: 10}
+		opt := &github.ListOptions{PerPage: 50}
 		repos, err := ListWatchedRepos(ctx, client, opt)
 		if err != nil {
 			log.Fatal(err)

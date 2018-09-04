@@ -53,7 +53,7 @@ func runProtect() {
 	log.Println("user: ", user.GetLogin())
 
 	{
-		opt := &github.ListOptions{PerPage: 10}
+		opt := &github.ListOptions{PerPage: 50}
 		orgs, err := ListOrgs(ctx, client, opt)
 		if err != nil {
 			log.Fatal(err)
@@ -67,13 +67,13 @@ func runProtect() {
 	{
 		opt := &github.RepositoryListOptions{
 			Affiliation: "owner,organization_member",
-			ListOptions: github.ListOptions{PerPage: 10},
+			ListOptions: github.ListOptions{PerPage: 50},
 		}
 		repos, err := ListRepos(ctx, client, user.GetLogin(), opt)
 		if err != nil {
 			log.Fatal(err)
 		}
-		log.Printf("Found %d orgs", len(repos))
+		log.Printf("Found %d repositories", len(repos))
 		for _, repo := range repos {
 			if repo.GetOwner().GetType() == "User" {
 				continue
