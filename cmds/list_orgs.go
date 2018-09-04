@@ -47,7 +47,7 @@ func runListOrgs() {
 	log.Println("user: ", user.GetLogin())
 
 	{
-		opt := &github.ListOptions{PerPage: 10}
+		opt := &github.ListOptions{PerPage: 50}
 		orgs, err := ListOrgs(ctx, client, opt)
 		if err != nil {
 			log.Fatal(err)
