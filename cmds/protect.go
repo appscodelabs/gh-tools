@@ -98,7 +98,7 @@ func ListOrgs(ctx context.Context, client *github.Client, opt *github.ListOption
 	for {
 		orgs, resp, err := client.Organizations.List(ctx, "", opt)
 		if err != nil {
-			return nil, err
+			break
 		}
 		result = append(result, orgs...)
 		if resp.NextPage == 0 {
@@ -115,7 +115,7 @@ func ListRepos(ctx context.Context, client *github.Client, user string, opt *git
 	for {
 		repos, resp, err := client.Repositories.List(ctx, "", opt)
 		if err != nil {
-			return nil, err
+			break
 		}
 		result = append(result, repos...)
 		if resp.NextPage == 0 {
@@ -135,7 +135,7 @@ func ListBranches(ctx context.Context, client *github.Client, repo *github.Repos
 	for {
 		branch, resp, err := client.Repositories.ListBranches(ctx, repo.Owner.GetLogin(), repo.GetName(), opt)
 		if err != nil {
-			return nil, err
+			break
 		}
 		result = append(result, branch...)
 		if resp.NextPage == 0 {

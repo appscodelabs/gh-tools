@@ -131,7 +131,7 @@ func ListStargazers(ctx context.Context, client *github.Client, repo *github.Rep
 	for {
 		stargazer, resp, err := client.Activity.ListStargazers(ctx, repo.Owner.GetLogin(), repo.GetName(), opt)
 		if err != nil {
-			return nil, err
+			break
 		}
 		result = append(result, stargazer...)
 		if resp.NextPage == 0 {
@@ -150,7 +150,7 @@ func ListWatchers(ctx context.Context, client *github.Client, repo *github.Repos
 	for {
 		stargazer, resp, err := client.Activity.ListWatchers(ctx, repo.Owner.GetLogin(), repo.GetName(), opt)
 		if err != nil {
-			return nil, err
+			break
 		}
 		result = append(result, stargazer...)
 		if resp.NextPage == 0 {
