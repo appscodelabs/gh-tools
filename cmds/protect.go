@@ -26,6 +26,7 @@ func NewCmdProtect() *cobra.Command {
 			runProtect()
 		},
 	}
+	cmd.Flags().BoolVar(&dryrun, "dryrun", dryrun, "If set to true, will not apply changes.")
 	return cmd
 }
 
@@ -79,7 +80,10 @@ func runProtect() {
 				continue
 			}
 			if repo.GetPermissions()["admin"] {
-				ProtectRepo(ctx, client, repo)
+				err = ProtectRepo(ctx, client, repo)
+				if err != nil {
+					log.Fatalln(err)
+				}
 			}
 		}
 	}
@@ -151,7 +155,6 @@ func ProtectRepo(ctx context.Context, client *github.Client, repo *github.Reposi
 	if err != nil {
 		return err
 	}
-
 	for _, branch := range branches {
 		if branch.GetName() == "master" || strings.HasPrefix(branch.GetName(), "release-") {
 			if err := ProtectBranch(ctx, client, repo.Owner.GetLogin(), repo.GetName(), branch.GetName()); err != nil {
@@ -159,7 +162,6 @@ func ProtectRepo(ctx context.Context, client *github.Client, repo *github.Reposi
 			}
 		}
 	}
-
 	return nil
 }
 
@@ -173,12 +175,17 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 	// set the branch to be protected
 	p := &github.ProtectionRequest{
 		RequiredStatusChecks: &github.RequiredStatusChecks{
-			Strict:   false,
+			Strict:   true,
 			Contexts: []string{},
 		},
 		RequiredPullRequestReviews: &github.PullRequestReviewsEnforcementRequest{
-			DismissStaleReviews:     true,
-			RequireCodeOwnerReviews: true,
+			DismissStaleReviews: true,
+			DismissalRestrictionsRequest: &github.DismissalRestrictionsRequest{
+				Users: nil,
+				Teams: nil,
+			},
+			RequireCodeOwnerReviews:      false,
+			RequiredApprovingReviewCount: 1,
 		},
 		// EnforceAdmins: true,
 		Restrictions: &github.BranchRestrictionsRequest{
