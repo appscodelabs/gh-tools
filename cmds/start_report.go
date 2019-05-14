@@ -11,7 +11,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v25/github"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 )
@@ -80,8 +80,10 @@ func runStarReport() {
 		log.Printf("Found %d repositories", len(repos))
 		for _, repo := range repos {
 			if repo.GetOwner().GetType() == "User" {
+				fmt.Printf("[ ] %s --- SKIPPED\n", repo.GetFullName())
 				continue
 			}
+
 			if repo.GetPermissions()["admin"] {
 				dir := filepath.Join(dirStarReport, repo.Owner.GetLogin(), repo.GetName())
 				err = os.MkdirAll(dir, 0755)

@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 
 	"github.com/appscodelabs/gh-tools/internal/git"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v25/github"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 )
