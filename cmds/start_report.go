@@ -95,32 +95,28 @@ func runStarReport() {
 				{
 					o2 := &github.ListOptions{PerPage: 50}
 					stargazers, err := ListStargazers(ctx, client, repo, o2)
-					if err != nil {
-						log.Fatal(err)
-					}
-					data, err := json.MarshalIndent(stargazers, "", "  ")
-					if err != nil {
-						log.Fatal(err)
-					}
-					err = ioutil.WriteFile(filepath.Join(dir, "stargazers.json"), data, 0644)
-					if err != nil {
-						log.Fatal(err)
+					if err == nil {
+						data, err := json.MarshalIndent(stargazers, "", "  ")
+						if err == nil {
+							err = ioutil.WriteFile(filepath.Join(dir, "stargazers.json"), data, 0644)
+							if err != nil {
+								log.Println(err)
+							}
+						}
 					}
 				}
 
 				{
 					o2 := &github.ListOptions{PerPage: 50}
 					watchers, err := ListWatchers(ctx, client, repo, o2)
-					if err != nil {
-						log.Fatal(err)
-					}
-					data, err := json.MarshalIndent(watchers, "", "  ")
-					if err != nil {
-						log.Fatal(err)
-					}
-					err = ioutil.WriteFile(filepath.Join(dir, "watchers.json"), data, 0644)
-					if err != nil {
-						log.Fatal(err)
+					if err == nil {
+						data, err := json.MarshalIndent(watchers, "", "  ")
+						if err == nil {
+							err = ioutil.WriteFile(filepath.Join(dir, "watchers.json"), data, 0644)
+							if err != nil {
+								log.Println(err)
+							}
+						}
 					}
 				}
 			}
