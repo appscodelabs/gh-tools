@@ -1,9 +1,9 @@
 # github.com/apex/log v1.1.1
 github.com/apex/log
-# github.com/appscode/go v0.0.0-20191118114503-b0dd5d8305d9
+# github.com/appscode/go v0.0.0-20191119085241-0887d8ec2ecc
 github.com/appscode/go/log/golog
-github.com/appscode/go/version
 github.com/appscode/go/runtime
+github.com/appscode/go/version
 # github.com/cpuguy83/go-md2man v1.0.10
 github.com/cpuguy83/go-md2man/md2man
 # github.com/davecgh/go-spew v1.1.0
@@ -42,12 +42,12 @@ golang.org/x/oauth2/internal
 # gomodules.xyz/version v0.1.0
 gomodules.xyz/version
 # google.golang.org/appengine v1.1.0
-google.golang.org/appengine/urlfetch
 google.golang.org/appengine/internal
-google.golang.org/appengine/internal/urlfetch
 google.golang.org/appengine/internal/base
 google.golang.org/appengine/internal/datastore
 google.golang.org/appengine/internal/log
 google.golang.org/appengine/internal/remote_api
+google.golang.org/appengine/internal/urlfetch
+google.golang.org/appengine/urlfetch
 # gopkg.in/yaml.v2 v2.2.2
 gopkg.in/yaml.v2
