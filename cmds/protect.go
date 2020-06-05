@@ -190,7 +190,10 @@ func ProtectRepo(ctx context.Context, client *github.Client, repo *github.Reposi
 		return err
 	}
 	for _, branch := range branches {
-		if branch.GetName() == "master" || strings.HasPrefix(branch.GetName(), "release-") {
+		if branch.GetName() == "master" ||
+			strings.HasPrefix(branch.GetName(), "release-") ||
+			strings.HasPrefix(branch.GetName(), "kubernetes-") ||
+			strings.HasPrefix(branch.GetName(), "ac-") {
 			if err := ProtectBranch(ctx, client, repo.Owner.GetLogin(), repo.GetName(), branch.GetName()); err != nil {
 				return err
 			}
