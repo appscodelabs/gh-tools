@@ -114,9 +114,9 @@ func runProtect() {
 			if repo.GetArchived() {
 				continue
 			}
-			if repo.GetFork() {
-				continue
-			}
+			//if repo.GetFork() {
+			//	continue
+			//}
 			if repo.GetPermissions()["admin"] {
 				err = ProtectRepo(ctx, client, repo)
 				if err != nil {

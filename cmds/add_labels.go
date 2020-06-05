@@ -160,7 +160,7 @@ func AddLabelToRepo(ctx context.Context, client *github.Client, repo *github.Rep
 			_, _, err := client.Issues.EditLabel(ctx, repo.Owner.GetLogin(), repo.GetName(), "automerge", &github.Label{
 				Name:        types.StringP("automerge"),
 				Color:       types.StringP("fef2c0"),
-				Description: types.StringP("Kodiak will auto merge PRs that have this label"),
+				Description: types.StringP("Kodiak will auto merge this PR"),
 			})
 			if err != nil {
 				return err
