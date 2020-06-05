@@ -114,6 +114,9 @@ func runProtect() {
 			if repo.GetArchived() {
 				continue
 			}
+			if repo.GetFork() {
+				continue
+			}
 			if repo.GetPermissions()["admin"] {
 				err = ProtectRepo(ctx, client, repo)
 				if err != nil {
@@ -216,7 +219,10 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 	p := &github.ProtectionRequest{
 		RequiredStatusChecks: &github.RequiredStatusChecks{
 			Strict:   true,
-			Contexts: []string{},
+			Contexts: []string{
+				"Build",
+				"DCO",
+			},
 		},
 		RequiredPullRequestReviews: &github.PullRequestReviewsEnforcementRequest{
 			DismissStaleReviews: true,

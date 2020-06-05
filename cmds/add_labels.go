@@ -95,6 +95,9 @@ func addLabels() {
 			if repo.GetArchived() {
 				continue
 			}
+			if repo.GetFork() {
+				continue
+			}
 			if repo.GetPermissions()["admin"] {
 				err = AddLabelToRepo(ctx, client, repo)
 				if err != nil {
