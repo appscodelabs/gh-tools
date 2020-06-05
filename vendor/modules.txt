@@ -2,6 +2,7 @@
 github.com/apex/log
 # github.com/appscode/go v0.0.0-20191119085241-0887d8ec2ecc
 github.com/appscode/go/log/golog
+github.com/appscode/go/types
 github.com/appscode/go/version
 # github.com/davecgh/go-spew v1.1.0
 github.com/davecgh/go-spew/spew

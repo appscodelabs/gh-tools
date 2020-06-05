@@ -111,6 +111,9 @@ func runProtect() {
 			if repo.GetPrivate() {
 				continue
 			}
+			if repo.GetArchived() {
+				continue
+			}
 			if repo.GetPermissions()["admin"] {
 				err = ProtectRepo(ctx, client, repo)
 				if err != nil {
