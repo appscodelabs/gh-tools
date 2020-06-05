@@ -218,7 +218,7 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 	// set the branch to be protected
 	p := &github.ProtectionRequest{
 		RequiredStatusChecks: &github.RequiredStatusChecks{
-			Strict:   true,
+			Strict: true,
 			Contexts: []string{
 				"Build",
 				"DCO",
