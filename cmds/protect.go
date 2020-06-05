@@ -105,7 +105,7 @@ func runProtect() {
 		}
 		log.Printf("Found %d repositories", len(repos))
 		for _, repo := range repos {
-			if repo.GetOwner().GetType() == "User" {
+			if repo.GetOwner().GetType() == OwnerTypeUser {
 				continue
 			}
 			if repo.GetPrivate() {
