@@ -69,6 +69,19 @@ func runProtect() {
 	}
 	log.Println("user: ", user.GetLogin())
 
+	//{
+	//	p, _, err := client.Repositories.GetBranchProtection(ctx, "stashed", "apimachinery", "master")
+	//	if err != nil {
+	//		log.Fatal(err)
+	//	}
+	//	data, err := json.MarshalIndent(p, "", "  ")
+	//	if err != nil {
+	//		log.Fatal(err)
+	//	}
+	//	fmt.Println(string(data))
+	//	os.Exit(1)
+	//}
+
 	{
 		opt := &github.ListOptions{PerPage: 50}
 		orgs, err := ListOrgs(ctx, client, opt)
@@ -93,6 +106,9 @@ func runProtect() {
 		log.Printf("Found %d repositories", len(repos))
 		for _, repo := range repos {
 			if repo.GetOwner().GetType() == "User" {
+				continue
+			}
+			if repo.GetPrivate() {
 				continue
 			}
 			if repo.GetPermissions()["admin"] {
@@ -207,10 +223,12 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 		},
 		// EnforceAdmins: true,
 		Restrictions: &github.BranchRestrictionsRequest{
-			Users: []string{},
-			Teams: []string{},
-			Apps:  []string{"kodiakhq"},
+			Users: make([]string, 1),
+			Teams: make([]string, 1),
 		},
+	}
+	if branch == "master" {
+		p.Restrictions.Apps = []string{"kodiakhq"}
 	}
 	_, _, err := client.Repositories.UpdateBranchProtection(ctx, owner, repo, branch, p)
 	return err
