@@ -1,3 +1,19 @@
+/*
+Copyright AppsCode Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package cmds
 
 import (
@@ -8,7 +24,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/google/go-github/v25/github"
+	"github.com/google/go-github/v32/github"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 )
@@ -131,8 +147,10 @@ func ListRepos(ctx context.Context, client *github.Client, user string, opt *git
 }
 
 func ListBranches(ctx context.Context, client *github.Client, repo *github.Repository) ([]*github.Branch, error) {
-	opt := &github.ListOptions{
-		PerPage: 100,
+	opt := &github.BranchListOptions{
+		ListOptions: github.ListOptions{
+			PerPage: 100,
+		},
 	}
 
 	var result []*github.Branch
@@ -191,6 +209,7 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 		Restrictions: &github.BranchRestrictionsRequest{
 			Users: []string{},
 			Teams: []string{},
+			Apps:  []string{"kodiakhq"},
 		},
 	}
 	_, _, err := client.Repositories.UpdateBranchProtection(ctx, owner, repo, branch, p)

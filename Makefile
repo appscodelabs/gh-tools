@@ -1,103 +1,302 @@
-SHELL := /bin/bash
-BIN := gh-tools
-CGO_ENV ?= CGO_ENABLED=0
-PKG := github.com/appscodelabs/$(BIN)
-UID := $(shell id -u $$USER)
+# Copyright 2019 AppsCode Inc.
+# Copyright 2016 The Kubernetes Authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-GOOS ?= $(shell go env GOOS)
-GOARCH ?= $(shell go env GOARCH)
-GOARM ?= $(shell go env GOARM)
-GOPATH = $(shell go env GOPATH)
-REPO_ROOT := $(GOPATH)/src/$(PKG)
+SHELL=/bin/bash -o pipefail
 
-platforms := linux/amd64 linux/arm64 linux/arm/7 linux/arm/6 windows/amd64 darwin/amd64
+GO_PKG   := github.com/appscodelabs
+REPO     := $(notdir $(shell pwd))
+BIN      := gh-tools
+COMPRESS ?= no
 
-# metadata
-commit_hash := $(shell git rev-parse --verify HEAD)
-git_branch := $(shell git rev-parse --abbrev-ref HEAD)
-git_tag := $(shell git describe --exact-match --abbrev=0 2>/dev/null || echo "")
+# This version-strategy uses git tags to set the version string
+git_branch       := $(shell git rev-parse --abbrev-ref HEAD)
+git_tag          := $(shell git describe --exact-match --abbrev=0 2>/dev/null || echo "")
+commit_hash      := $(shell git rev-parse --verify HEAD)
 commit_timestamp := $(shell date --date="@$$(git show -s --format=%ct)" --utc +%FT%T)
-build_timestamp := $(shell date --utc +%FT%T)
-build_host:= $(shell hostname)
-build_host_os:= $(shell go env GOHOSTOS)
-build_host_arch:= $(shell go env GOHOSTARCH)
+
+VERSION          := $(shell git describe --tags --always --dirty)
 version_strategy := commit_hash
-version := $(shell git describe --tags --always --dirty)
-
-# compiler flags
-linker_opts := -X main.GitTag=$(git_tag) -X main.CommitHash=$(commit_hash) -X main.CommitTimestamp=$(commit_timestamp) \
-	-X main.VersionStrategy=$(version_strategy) -X main.Version=$(version) -X main.GitBranch=$(git_branch) \
-	-X main.Os=$(GOOS) -X main.Arch=$(GOARCH)
-
-ifeq ($(CGO_ENV),CGO_ENABLED=1)
-	CGO := -a -installsuffix cgo
-	linker_opts += -linkmode external -extldflags -static -w
-endif
-
 ifdef git_tag
-	version := $(git_tag)
+	VERSION := $(git_tag)
 	version_strategy := tag
 else
-	ifneq ($(git_branch),$(or master, HEAD))
-		ifeq (,$(findstring release-,$(git_branch)))
-			version := $(git_branch)
+	ifeq (,$(findstring $(git_branch),master HEAD))
+		ifneq (,$(patsubst release-%,,$(git_branch)))
+			VERSION := $(git_branch)
 			version_strategy := branch
-			linker_opts += -X main.BuildTimestamp=$(build_timestamp) -X main.BuildHost=$(build_host) \
-						   -X main.BuildHostOS=$(build_host_os) -X main.BuildHostArch=$(build_host_arch)
 		endif
 	endif
 endif
-ldflags :=-ldflags '$(linker_opts)'
 
-SOURCES := $(shell find . -name "*.go")
+###
+### These variables should not need tweaking.
+###
 
-# build locally
-dist/$(BIN)/local/$(BIN)-$(GOOS)-$(GOARCH)$(GOARM): $(SOURCES)
-	@cowsay -f tux building binary $(BIN)-$(GOOS)-$(GOARCH)$(GOARM)
-	GOOS=$(GOOS) GOARCH=$(GOARCH) GOARM=$(GOARM) $(CGO_ENV) \
-		go build -o dist/$(BIN)/local/$(BIN)-$(GOOS)-$(GOARCH)$(GOARM) \
-		$(CGO) $(ldflags) *.go
+SRC_PKGS := cmds internal
+SRC_DIRS := $(SRC_PKGS) *.go # directories which hold app source (not vendored)
 
-# build inside docker
-dist/$(BIN)/$(BIN)-$(GOOS)-$(GOARCH)$(GOARM): $(SOURCES)
-	@cowsay -f tux building binary $(BIN)-$(GOOS)-$(GOARCH)$(GOARM) inside docker
-	docker run --rm -u $(UID) -v /tmp:/.cache -v $$(pwd):/go/src/$(PKG) -w /go/src/$(PKG) \
-		-e $(CGO_ENV) golang:1.10.0 env GOOS=$(GOOS) GOARCH=$(GOARCH) GOARM=$(GOARM) $(CGO_ENV) \
-		go build -o dist/$(BIN)/$(BIN)-$(GOOS)-$(GOARCH)$(GOARM) \
-		$(CGO) $(ldflags) *.go
+DOCKER_PLATFORMS := linux/amd64 linux/arm linux/arm64
+BIN_PLATFORMS    := $(DOCKER_PLATFORMS) darwin/amd64
 
-# nfpm
-dist/$(BIN)/package/$(BIN)-$(GOOS)-$(GOARCH)$(GOARM).%: build-docker
-	@cowsay -f tux creating package $(BIN)-$(GOOS)-$(GOARCH)$(GOARM).$*
-	@mkdir -p dist/package
-	docker run --rm -v $(REPO_ROOT):/go/src/$(PKG) -w /go/src/$(PKG) tahsin/releaser:latest /bin/bash -c \
-		"sed -i 's/amd64/$(GOARCH)$(GOARM)/' /nfpm.yaml; \
-		sed -i 's/linux/$(GOOS)/' /nfpm.yaml; \
-		sed -i '4s/1.0.0/$(version)/' /nfpm.yaml; \
-		sed -i 's/BIN/$(BIN)/g' /nfpm.yaml; \
-		nfpm pkg --target /go/src/$(PKG)/dist/package/$(BIN)-$(GOOS)-$(GOARCH)$(GOARM).$* -f /nfpm.yaml"
+# Used internally.  Users should pass GOOS and/or GOARCH.
+OS   := $(if $(GOOS),$(GOOS),$(shell go env GOOS))
+ARCH := $(if $(GOARCH),$(GOARCH),$(shell go env GOARCH))
 
-build-local: dist/$(BIN)/local/$(BIN)-$(GOOS)-$(GOARCH)$(GOARM)
-build-docker: dist/$(BIN)/$(BIN)-$(GOOS)-$(GOARCH)$(GOARM)
+GO_VERSION       ?= 1.14
+BUILD_IMAGE      ?= appscode/golang-dev:$(GO_VERSION)
 
-all-build-%:
-	@for platform in $(platforms); do \
-		IFS='/' read -r -a array <<< $$platform; \
-		GOOS=$${array[0]}; GOARCH=$${array[1]}; GOARM=$${array[2]}; \
-		$(MAKE) --no-print-directory GOOS=$$GOOS GOARCH=$$GOARCH GOARM=$$GOARM build-$*; \
-	done
+OUTBIN = bin/$(BIN)-$(OS)-$(ARCH)
+ifeq ($(OS),windows)
+  OUTBIN := bin/$(BIN)-$(OS)-$(ARCH).exe
+  BIN := $(BIN).exe
+endif
 
-package-%:
-	@mkdir -p dist/$(BIN)/package
-	$(MAKE) --no-print-directory dist/$(BIN)/package/$(BIN)-$(GOOS)-$(GOARCH)$(GOARM).$*
+# Directories that we need created to build/test.
+BUILD_DIRS  := bin/$(OS)_$(ARCH)     \
+               .go/bin/$(OS)_$(ARCH) \
+               .go/cache             \
+               hack/config           \
+               $(HOME)/.credentials  \
+               $(HOME)/.kube         \
+               $(HOME)/.minikube
 
-linux_package_platforms := linux/amd64 linux/arm64 linux/arm/7 linux/arm/6
-all-package:
-	@for platform in $(linux_package_platforms); do \
-		IFS='/' read -r -a array <<< $$platform; \
-		GOOS=$${array[0]}; GOARCH=$${array[1]}; GOARM=$${array[2]}; \
-		$(MAKE) --no-print-directory GOOS=$$GOOS GOARCH=$$GOARCH GOARM=$$GOARM package-deb; \
-		$(MAKE) --no-print-directory GOOS=$$GOOS GOARCH=$$GOARCH GOARM=$$GOARM package-rpm; \
-	done
+DOCKER_REPO_ROOT := /go/src/$(GO_PKG)/$(REPO)
 
-.phony: build-docker build-local all-build-% package-% all-package
+# If you want to build all binaries, see the 'all-build' rule.
+# If you want to build all containers, see the 'all-container' rule.
+# If you want to build AND push all containers, see the 'all-push' rule.
+all: fmt build
+
+# For the following OS/ARCH expansions, we transform OS/ARCH into OS_ARCH
+# because make pattern rules don't match with embedded '/' characters.
+
+build-%:
+	@$(MAKE) build                        \
+	    --no-print-directory              \
+	    GOOS=$(firstword $(subst _, ,$*)) \
+	    GOARCH=$(lastword $(subst _, ,$*))
+
+all-build: $(addprefix build-, $(subst /,_, $(BIN_PLATFORMS)))
+
+version:
+	@echo ::set-output name=version::$(VERSION)
+	@echo ::set-output name=version_strategy::$(version_strategy)
+	@echo ::set-output name=git_tag::$(git_tag)
+	@echo ::set-output name=git_branch::$(git_branch)
+	@echo ::set-output name=commit_hash::$(commit_hash)
+	@echo ::set-output name=commit_timestamp::$(commit_timestamp)
+
+gen:
+	@true
+
+fmt: $(BUILD_DIRS)
+	@docker run                                                 \
+	    -i                                                      \
+	    --rm                                                    \
+	    -u $$(id -u):$$(id -g)                                  \
+	    -v $$(pwd):/src                                         \
+	    -w /src                                                 \
+	    -v $$(pwd)/.go/bin/$(OS)_$(ARCH):/go/bin                \
+	    -v $$(pwd)/.go/bin/$(OS)_$(ARCH):/go/bin/$(OS)_$(ARCH)  \
+	    -v $$(pwd)/.go/cache:/.cache                            \
+	    --env HTTP_PROXY=$(HTTP_PROXY)                          \
+	    --env HTTPS_PROXY=$(HTTPS_PROXY)                        \
+	    $(BUILD_IMAGE)                                          \
+	    /bin/bash -c "                                          \
+	        REPO_PKG=$(GO_PKG)                                  \
+	        ./hack/fmt.sh $(SRC_DIRS)                           \
+	    "
+
+build: $(OUTBIN)
+
+# The following structure defeats Go's (intentional) behavior to always touch
+# result files, even if they have not changed.  This will still run `go` but
+# will not trigger further work if nothing has actually changed.
+
+$(OUTBIN): .go/$(OUTBIN).stamp
+	@true
+
+# This will build the binary under ./.go and update the real binary iff needed.
+.PHONY: .go/$(OUTBIN).stamp
+.go/$(OUTBIN).stamp: $(BUILD_DIRS)
+	@echo "making $(OUTBIN)"
+	@docker run                                                 \
+	    -i                                                      \
+	    --rm                                                    \
+	    -u $$(id -u):$$(id -g)                                  \
+	    -v $$(pwd):/src                                         \
+	    -w /src                                                 \
+	    -v $$(pwd)/.go/bin/$(OS)_$(ARCH):/go/bin                \
+	    -v $$(pwd)/.go/bin/$(OS)_$(ARCH):/go/bin/$(OS)_$(ARCH)  \
+	    -v $$(pwd)/.go/cache:/.cache                            \
+	    --env HTTP_PROXY=$(HTTP_PROXY)                          \
+	    --env HTTPS_PROXY=$(HTTPS_PROXY)                        \
+	    $(BUILD_IMAGE)                                          \
+	    /bin/bash -c "                                          \
+	        ARCH=$(ARCH)                                        \
+	        OS=$(OS)                                            \
+	        VERSION=$(VERSION)                                  \
+	        version_strategy=$(version_strategy)                \
+	        git_branch=$(git_branch)                            \
+	        git_tag=$(git_tag)                                  \
+	        commit_hash=$(commit_hash)                          \
+	        commit_timestamp=$(commit_timestamp)                \
+	        ./hack/build.sh                                     \
+	    "
+	@if [ $(COMPRESS) = yes ] && [ $(OS) != darwin ]; then          \
+		echo "compressing $(OUTBIN)";                               \
+		docker run                                                  \
+		    -i                                                      \
+		    --rm                                                    \
+		    -u $$(id -u):$$(id -g)                                  \
+		    -v $$(pwd):/src                                         \
+		    -w /src                                                 \
+		    -v $$(pwd)/.go/bin/$(OS)_$(ARCH):/go/bin                \
+		    -v $$(pwd)/.go/bin/$(OS)_$(ARCH):/go/bin/$(OS)_$(ARCH)  \
+		    -v $$(pwd)/.go/cache:/.cache                            \
+		    --env HTTP_PROXY=$(HTTP_PROXY)                          \
+		    --env HTTPS_PROXY=$(HTTPS_PROXY)                        \
+		    $(BUILD_IMAGE)                                          \
+		    upx --brute /go/bin/$(BIN);                             \
+	fi
+	@if ! cmp -s .go/bin/$(OS)_$(ARCH)/$(BIN) $(OUTBIN); then   \
+	    mv .go/bin/$(OS)_$(ARCH)/$(BIN) $(OUTBIN);              \
+	    date >$@;                                               \
+	fi
+	@echo
+
+.PHONY: test
+test: unit-tests
+
+unit-tests: $(BUILD_DIRS)
+	@docker run                                                 \
+	    -i                                                      \
+	    --rm                                                    \
+	    -u $$(id -u):$$(id -g)                                  \
+	    -v $$(pwd):/src                                         \
+	    -w /src                                                 \
+	    -v $$(pwd)/.go/bin/$(OS)_$(ARCH):/go/bin                \
+	    -v $$(pwd)/.go/bin/$(OS)_$(ARCH):/go/bin/$(OS)_$(ARCH)  \
+	    -v $$(pwd)/.go/cache:/.cache                            \
+	    --env HTTP_PROXY=$(HTTP_PROXY)                          \
+	    --env HTTPS_PROXY=$(HTTPS_PROXY)                        \
+	    $(BUILD_IMAGE)                                          \
+	    /bin/bash -c "                                          \
+	        ARCH=$(ARCH)                                        \
+	        OS=$(OS)                                            \
+	        VERSION=$(VERSION)                                  \
+	        ./hack/test.sh $(SRC_PKGS)                          \
+	    "
+
+ADDTL_LINTERS   := goconst,gofmt,goimports,unparam
+
+.PHONY: lint
+lint: $(BUILD_DIRS)
+	@echo "running linter"
+	@docker run                                                 \
+	    -i                                                      \
+	    --rm                                                    \
+	    -u $$(id -u):$$(id -g)                                  \
+	    -v $$(pwd):/src                                         \
+	    -w /src                                                 \
+	    -v $$(pwd)/.go/bin/$(OS)_$(ARCH):/go/bin                \
+	    -v $$(pwd)/.go/bin/$(OS)_$(ARCH):/go/bin/$(OS)_$(ARCH)  \
+	    -v $$(pwd)/.go/cache:/.cache                            \
+	    --env HTTP_PROXY=$(HTTP_PROXY)                          \
+	    --env HTTPS_PROXY=$(HTTPS_PROXY)                        \
+	    --env GO111MODULE=on                                    \
+	    --env GOFLAGS="-mod=vendor"                             \
+	    $(BUILD_IMAGE)                                          \
+	    golangci-lint run --enable $(ADDTL_LINTERS) --deadline=10m --skip-files="generated.*\.go$\" --skip-dirs-use-default
+
+$(BUILD_DIRS):
+	@mkdir -p $@
+
+.PHONY: dev
+dev: gen fmt build
+
+.PHONY: verify
+verify: verify-modules verify-gen
+
+.PHONY: verify-modules
+verify-modules:
+	GO111MODULE=on go mod tidy
+	GO111MODULE=on go mod vendor
+	@if !(git diff --exit-code HEAD); then \
+		echo "go module files are out of date"; exit 1; \
+	fi
+
+.PHONY: verify-gen
+verify-gen: gen fmt
+	@if !(git diff --exit-code HEAD); then \
+		echo "files are out of date, run make gen fmt"; exit 1; \
+	fi
+
+.PHONY: add-license
+add-license:
+	@echo "Adding license header"
+	@docker run --rm 	                                 \
+		-u $$(id -u):$$(id -g)                           \
+		-v /tmp:/.cache                                  \
+		-v $$(pwd):$(DOCKER_REPO_ROOT)                   \
+		-w $(DOCKER_REPO_ROOT)                           \
+		--env HTTP_PROXY=$(HTTP_PROXY)                   \
+		--env HTTPS_PROXY=$(HTTPS_PROXY)                 \
+		$(BUILD_IMAGE)                                   \
+		ltag -t "./hack/license" --excludes "vendor contrib" -v
+
+.PHONY: check-license
+check-license:
+	@echo "Checking files for license header"
+	@docker run --rm 	                                 \
+		-u $$(id -u):$$(id -g)                           \
+		-v /tmp:/.cache                                  \
+		-v $$(pwd):$(DOCKER_REPO_ROOT)                   \
+		-w $(DOCKER_REPO_ROOT)                           \
+		--env HTTP_PROXY=$(HTTP_PROXY)                   \
+		--env HTTPS_PROXY=$(HTTPS_PROXY)                 \
+		$(BUILD_IMAGE)                                   \
+		ltag -t "./hack/license" --excludes "vendor contrib" --check -v
+
+.PHONY: ci
+ci: verify check-license lint build unit-tests #cover
+
+.PHONY: qa
+qa:
+	@if [ "$$APPSCODE_ENV" = "prod" ]; then                                              \
+		echo "Nothing to do in prod env. Are you trying to 'release' binaries to prod?"; \
+		exit 1;                                                                          \
+	fi
+	@if [ "$(version_strategy)" = "tag" ]; then               \
+		echo "Are you trying to 'release' binaries to prod?"; \
+		exit 1;                                               \
+	fi
+	@$(MAKE) clean all-build --no-print-directory
+
+.PHONY: release
+release:
+	@if [ "$$APPSCODE_ENV" != "prod" ]; then      \
+		echo "'release' only works in PROD env."; \
+		exit 1;                                   \
+	fi
+	@if [ "$(version_strategy)" != "tag" ]; then                    \
+		echo "apply tag to release binaries and/or docker images."; \
+		exit 1;                                                     \
+	fi
+	@$(MAKE) clean all-build --no-print-directory
+
+.PHONY: clean
+clean:
+	rm -rf .go bin
