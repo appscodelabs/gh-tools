@@ -246,9 +246,9 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			"Kubernetes (v1.12.10)",
 			"Kubernetes (v1.13.12)",
 			"Kubernetes (v1.14.10)",
-			"Kubernetes (v1.15.7)",
+			"Kubernetes (v1.15.11)",
 			"Kubernetes (v1.16.9)",
-			"Kubernetes (v1.17.2)",
+			"Kubernetes (v1.17.5)",
 			"Kubernetes (v1.18.2)",
 		)
 	}
