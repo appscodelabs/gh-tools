@@ -239,7 +239,8 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			Teams: make([]string, 1),
 		},
 	}
-	if repo == "installer" {
+	if repo == "installer" ||
+		(owner == "stashed" && repo == "catalog") {
 		p.RequiredStatusChecks.Contexts = append(
 			p.RequiredStatusChecks.Contexts,
 			"Kubernetes (v1.12.10)",
