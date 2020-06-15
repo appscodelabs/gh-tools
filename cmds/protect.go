@@ -239,6 +239,18 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			Teams: make([]string, 1),
 		},
 	}
+	if repo == "installer" {
+		p.RequiredStatusChecks.Contexts = append(
+			p.RequiredStatusChecks.Contexts,
+			"Kubernetes (v1.12.10)",
+			"Kubernetes (v1.13.12)",
+			"Kubernetes (v1.14.10)",
+			"Kubernetes (v1.15.7)",
+			"Kubernetes (v1.16.9)",
+			"Kubernetes (v1.17.2)",
+			"Kubernetes (v1.18.2)",
+		)
+	}
 	if branch == "master" {
 		p.Restrictions.Apps = []string{"kodiakhq"}
 	}
