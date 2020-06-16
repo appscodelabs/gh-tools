@@ -237,6 +237,7 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 		Restrictions: &github.BranchRestrictionsRequest{
 			Users: make([]string, 1),
 			Teams: make([]string, 1),
+			Apps:  []string{"kodiakhq"},
 		},
 	}
 	if repo == "installer" ||
@@ -252,9 +253,9 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			"Kubernetes (v1.18.2)",
 		)
 	}
-	if branch == "master" {
-		p.Restrictions.Apps = []string{"kodiakhq"}
-	}
+	//if branch == "master" {
+	//	p.Restrictions.Apps = []string{"kodiakhq"}
+	//}
 	_, _, err := client.Repositories.UpdateBranchProtection(ctx, owner, repo, branch, p)
 	return err
 }
