@@ -250,7 +250,7 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			"Kubernetes (v1.15.11)",
 			"Kubernetes (v1.16.9)",
 			"Kubernetes (v1.17.5)",
-			"Kubernetes (v1.18.2)",
+			"Kubernetes (v1.18.4)",
 		)
 	}
 	//if branch == "master" {
