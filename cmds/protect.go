@@ -253,6 +253,11 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			"Kubernetes (v1.18.4)",
 		)
 	}
+	if strings.EqualFold(repo, "CHANGELOG") {
+		p.RequiredStatusChecks.Contexts = []string{
+			"DCO",
+		}
+	}
 	//if branch == "master" {
 	//	p.Restrictions.Apps = []string{"kodiakhq"}
 	//}
