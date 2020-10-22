@@ -253,6 +253,8 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 		)
 	}
 	if strings.EqualFold(repo, "CHANGELOG") {
+		// Avoid dismissing stale reviews, since delay in kodiak auto approval can fail release process.
+		p.RequiredPullRequestReviews.DismissStaleReviews = false
 		p.RequiredStatusChecks.Contexts = []string{
 			"DCO",
 		}
