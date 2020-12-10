@@ -249,7 +249,7 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			"Kubernetes (v1.16.9)",
 			"Kubernetes (v1.17.5)",
 			"Kubernetes (v1.18.8)",
-			"Kubernetes (v1.19.1)",
+			"Kubernetes (v1.20.0)",
 		)
 	}
 	if strings.EqualFold(repo, "CHANGELOG") {
