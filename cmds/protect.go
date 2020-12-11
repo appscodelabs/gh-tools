@@ -108,7 +108,7 @@ func runProtect() {
 			if repo.GetOwner().GetType() == OwnerTypeUser {
 				continue
 			}
-			if repo.GetPrivate() {
+			if repo.GetOwner().GetLogin() != "appscode" && repo.GetPrivate() {
 				continue
 			}
 			if repo.GetArchived() {
