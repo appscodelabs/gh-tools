@@ -200,7 +200,7 @@ func ProtectRepo(ctx context.Context, client *github.Client, repo *github.Reposi
 			strings.HasPrefix(branch.GetName(), "release-") ||
 			strings.HasPrefix(branch.GetName(), "kubernetes-") ||
 			strings.HasPrefix(branch.GetName(), "ac-") {
-			if err := ProtectBranch(ctx, client, repo.Owner.GetLogin(), repo.GetName(), branch.GetName()); err != nil {
+			if err := ProtectBranch(ctx, client, repo.Owner.GetLogin(), repo.GetName(), branch.GetName(), repo.GetPrivate()); err != nil {
 				return err
 			}
 		}
@@ -208,7 +208,7 @@ func ProtectRepo(ctx context.Context, client *github.Client, repo *github.Reposi
 	return nil
 }
 
-func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, branch string) error {
+func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, branch string, private bool) error {
 	fmt.Printf("[UPDATE] %s/%s:%s will be changed to protected\n", owner, repo, branch)
 	if dryrun {
 		// return early
@@ -237,9 +237,15 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 		Restrictions: &github.BranchRestrictionsRequest{
 			Users: make([]string, 1),
 			Teams: make([]string, 1),
-			Apps:  []string{"kodiakhq"},
+			// Apps:  []string{"kodiakhq"},
 		},
 	}
+	if owner == "appscode" && private {
+		p.Restrictions.Apps = []string{"kodiak-appscode"}
+	} else {
+		p.Restrictions.Apps = []string{"kodiakhq"}
+	}
+
 	if repo == "installer" ||
 		(owner == "stashed" && repo == "catalog") {
 		p.RequiredStatusChecks.Contexts = append(
