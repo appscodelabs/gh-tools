@@ -22,10 +22,10 @@ import (
 	"log"
 	"os"
 
-	"github.com/appscode/go/types"
 	"github.com/google/go-github/v32/github"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
+	"gomodules.xyz/pointer"
 )
 
 func NewCmdAddLabels() *cobra.Command {
@@ -158,9 +158,9 @@ func AddLabelToRepo(ctx context.Context, client *github.Client, repo *github.Rep
 	if label, ok := LabelExists(labels, "automerge"); ok {
 		if label.GetColor() != "fef2c0" {
 			_, _, err := client.Issues.EditLabel(ctx, repo.Owner.GetLogin(), repo.GetName(), "automerge", &github.Label{
-				Name:        types.StringP("automerge"),
-				Color:       types.StringP("fef2c0"),
-				Description: types.StringP("Kodiak will auto merge this PR"),
+				Name:        pointer.StringP("automerge"),
+				Color:       pointer.StringP("fef2c0"),
+				Description: pointer.StringP("Kodiak will auto merge this PR"),
 			})
 			if err != nil {
 				return err
@@ -168,9 +168,9 @@ func AddLabelToRepo(ctx context.Context, client *github.Client, repo *github.Rep
 		}
 	} else {
 		_, _, err := client.Issues.CreateLabel(ctx, repo.Owner.GetLogin(), repo.GetName(), &github.Label{
-			Name:        types.StringP("automerge"),
-			Color:       types.StringP("fef2c0"),
-			Description: types.StringP("Kodiak will auto merge PRs that have this label"),
+			Name:        pointer.StringP("automerge"),
+			Color:       pointer.StringP("fef2c0"),
+			Description: pointer.StringP("Kodiak will auto merge PRs that have this label"),
 		})
 		if err != nil {
 			return err

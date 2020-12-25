@@ -21,7 +21,7 @@ import (
 
 	"github.com/appscodelabs/gh-tools/cmds"
 
-	logs "github.com/appscode/go/log/golog"
+	logs "gomodules.xyz/x/log/golog"
 )
 
 func main() {

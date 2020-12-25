@@ -4,10 +4,11 @@ go 1.12
 
 require (
 	github.com/apex/log v1.1.1
-	github.com/appscode/go v0.0.0-20191119085241-0887d8ec2ecc
-	github.com/google/go-github/v32 v32.0.0
-	github.com/spf13/cobra v0.0.3
-	github.com/spf13/pflag v1.0.3
-	github.com/stretchr/testify v1.3.0
-	golang.org/x/oauth2 v0.0.0-20180821212333-d2e6202438be
+	github.com/google/go-github/v32 v32.1.0
+	github.com/spf13/cobra v1.1.1
+	github.com/spf13/pflag v1.0.5
+	github.com/stretchr/testify v1.5.1
+	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
+	gomodules.xyz/pointer v0.0.0-20201105040656-991dd254b680
+	gomodules.xyz/x v0.0.0-20201105065653-91c568df6331
 )
