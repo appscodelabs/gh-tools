@@ -251,12 +251,12 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 		p.RequiredStatusChecks.Contexts = append(
 			p.RequiredStatusChecks.Contexts,
 			"Kubernetes (v1.14.10)",
-			"Kubernetes (v1.15.11)",
-			"Kubernetes (v1.16.9)",
-			"Kubernetes (v1.17.5)",
-			"Kubernetes (v1.18.8)",
-			"Kubernetes (v1.19.4)",
-			"Kubernetes (v1.20.0)",
+			"Kubernetes (v1.15.12)",
+			"Kubernetes (v1.16.15)",
+			"Kubernetes (v1.17.17)",
+			"Kubernetes (v1.18.15)",
+			"Kubernetes (v1.19.7)",
+			"Kubernetes (v1.20.2)",
 		)
 	}
 	if repo == "ui-wizards" {
@@ -264,11 +264,11 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			p.RequiredStatusChecks.Contexts,
 			//"Kubernetes (v1.14.10)",
 			//"Kubernetes (v1.15.11)",
-			"Kubernetes (v1.16.9)",
-			"Kubernetes (v1.17.5)",
-			"Kubernetes (v1.18.8)",
-			"Kubernetes (v1.19.4)",
-			"Kubernetes (v1.20.0)",
+			"Kubernetes (v1.16.15)",
+			"Kubernetes (v1.17.17)",
+			"Kubernetes (v1.18.15)",
+			"Kubernetes (v1.19.7)",
+			"Kubernetes (v1.20.2)",
 		)
 	}
 	if strings.EqualFold(repo, "CHANGELOG") {
