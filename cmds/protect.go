@@ -222,7 +222,6 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			Contexts: []string{
 				"Build",
 				"DCO",
-				"license/cla",
 			},
 		},
 		RequiredPullRequestReviews: &github.PullRequestReviewsEnforcementRequest{
@@ -245,6 +244,13 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 		p.Restrictions.Apps = []string{"kodiak-appscode"}
 	} else {
 		p.Restrictions.Apps = []string{"kodiakhq"}
+	}
+
+	if !private {
+		p.RequiredStatusChecks.Contexts = append(
+			p.RequiredStatusChecks.Contexts,
+			"license/cla",
+		)
 	}
 
 	if repo == "installer" ||
