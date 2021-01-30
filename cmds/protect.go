@@ -222,6 +222,7 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			Contexts: []string{
 				"Build",
 				"DCO",
+				"license/cla",
 			},
 		},
 		RequiredPullRequestReviews: &github.PullRequestReviewsEnforcementRequest{
