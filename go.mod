@@ -1,6 +1,6 @@
 module github.com/appscodelabs/gh-tools
 
-go 1.12
+go 1.16
 
 require (
 	github.com/apex/log v1.1.1

@@ -1,4 +1,5 @@
 # github.com/apex/log v1.1.1
+## explicit
 github.com/apex/log
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
@@ -7,6 +8,7 @@ github.com/golang/glog
 # github.com/golang/protobuf v1.4.3
 github.com/golang/protobuf/proto
 # github.com/google/go-github/v32 v32.1.0
+## explicit
 github.com/google/go-github/v32/github
 # github.com/google/go-querystring v1.0.0
 github.com/google/go-querystring/query
@@ -17,10 +19,13 @@ github.com/pkg/errors
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
 # github.com/spf13/cobra v1.1.1
+## explicit
 github.com/spf13/cobra
 # github.com/spf13/pflag v1.0.5
+## explicit
 github.com/spf13/pflag
 # github.com/stretchr/testify v1.5.1
+## explicit
 github.com/stretchr/testify/assert
 # golang.org/x/crypto v0.0.0-20190605123033-f99c8df09eb5
 golang.org/x/crypto/cast5
@@ -34,13 +39,16 @@ golang.org/x/crypto/openpgp/s2k
 golang.org/x/net/context
 golang.org/x/net/context/ctxhttp
 # golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
+## explicit
 golang.org/x/oauth2
 golang.org/x/oauth2/internal
 # gomodules.xyz/pointer v0.0.0-20201105040656-991dd254b680
+## explicit
 gomodules.xyz/pointer
 # gomodules.xyz/version v0.1.0
 gomodules.xyz/version
 # gomodules.xyz/x v0.0.0-20201105065653-91c568df6331
+## explicit
 gomodules.xyz/x/log/golog
 gomodules.xyz/x/version
 # google.golang.org/appengine v1.6.1
