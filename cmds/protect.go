@@ -82,6 +82,7 @@ func runProtect() {
 	//	os.Exit(1)
 	//}
 
+	freeOrgs := map[string]bool{}
 	{
 		opt := &github.ListOptions{PerPage: 50}
 		orgs, err := ListOrgs(ctx, client, opt)
@@ -91,6 +92,7 @@ func runProtect() {
 		log.Printf("Found %d orgs", len(orgs))
 		for _, org := range orgs {
 			fmt.Println(">>> " + org.GetLogin())
+			freeOrgs[org.GetLogin()] = org.GetPlan().GetName() == "free"
 		}
 	}
 
@@ -108,7 +110,7 @@ func runProtect() {
 			if repo.GetOwner().GetType() == OwnerTypeUser {
 				continue // don't protect personal repos
 			}
-			if repo.GetOwner().GetPlan().GetName() == "free" && repo.GetPrivate() {
+			if freeOrgs[repo.GetOwner().GetLogin()] && repo.GetPrivate() {
 				continue
 			}
 			if repo.GetArchived() {
