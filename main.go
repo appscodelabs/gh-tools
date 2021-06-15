@@ -21,14 +21,16 @@ import (
 
 	"github.com/appscodelabs/gh-tools/cmds"
 
-	logs "gomodules.xyz/x/log/golog"
+	"gomodules.xyz/logs"
 )
 
 func main() {
-	logs.InitLogs()
+	rootCmd := cmds.NewRootCmd(Version)
+
+	logs.Init(rootCmd, true)
 	defer logs.FlushLogs()
 
-	if err := cmds.NewRootCmd(Version).Execute(); err != nil {
+	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
 	}
 	os.Exit(0)

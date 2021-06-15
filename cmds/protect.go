@@ -24,7 +24,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/google/go-github/v32/github"
+	"github.com/google/go-github/v35/github"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 )
@@ -106,9 +106,9 @@ func runProtect() {
 		log.Printf("Found %d repositories", len(repos))
 		for _, repo := range repos {
 			if repo.GetOwner().GetType() == OwnerTypeUser {
-				continue
+				continue // don't protect personal repos
 			}
-			if repo.GetOwner().GetLogin() != "appscode" && repo.GetPrivate() {
+			if repo.GetOwner().GetPlan().GetName() == "free" && repo.GetPrivate() {
 				continue
 			}
 			if repo.GetArchived() {
