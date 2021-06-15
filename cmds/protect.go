@@ -92,7 +92,12 @@ func runProtect() {
 		log.Printf("Found %d orgs", len(orgs))
 		for _, org := range orgs {
 			fmt.Println(">>> " + org.GetLogin())
-			freeOrgs[org.GetLogin()] = org.GetPlan().GetName() == "free"
+			// list orgs api does not return plan info
+			r, _, err := client.Organizations.Get(ctx, org.GetLogin())
+			if err != nil {
+				log.Fatal(err)
+			}
+			freeOrgs[r.GetLogin()] = r.GetPlan().GetName() == "free"
 		}
 	}
 
