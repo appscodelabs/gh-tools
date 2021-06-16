@@ -440,9 +440,12 @@ GET_TEAM:
 	privacy := "closed"
 	for {
 		t, _, err := client.Teams.CreateTeam(ctx, org, github.NewTeam{
-			Name:        team,
-			Description: nil,
-			Privacy:     &privacy,
+			Name: team,
+			Maintainers: []string{
+				"tamalsaha",
+				"1gtm",
+			},
+			Privacy: &privacy,
 		})
 		switch e := err.(type) {
 		case *github.RateLimitError:
