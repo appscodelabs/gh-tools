@@ -20,17 +20,27 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/google/go-github/v35/github"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 )
 
+const (
+	skew            = 10 * time.Second
+	teamReviewers   = "reviewers"
+	teamFEReviewers = "fe-reviewers" //frontend
+	teamBEReviewers = "be-reviewers" //backend
+)
+
 var (
-	dryrun = false
+	dryrun   = false
+	freeOrgs = map[string]bool{}
 )
 
 func NewCmdProtect() *cobra.Command {
@@ -82,7 +92,6 @@ func runProtect() {
 	//	os.Exit(1)
 	//}
 
-	freeOrgs := map[string]bool{}
 	{
 		opt := &github.ListOptions{PerPage: 50}
 		orgs, err := ListOrgs(ctx, client, opt)
@@ -98,6 +107,22 @@ func runProtect() {
 				log.Fatal(err)
 			}
 			freeOrgs[r.GetLogin()] = r.GetPlan().GetName() == "free"
+
+			if r.GetLogin() == "appscode" {
+				_, err = CreateTeamIfMissing(ctx, client, r.GetLogin(), teamBEReviewers)
+				if err != nil {
+					log.Fatal(err)
+				}
+				_, err = CreateTeamIfMissing(ctx, client, r.GetLogin(), teamFEReviewers)
+				if err != nil {
+					log.Fatal(err)
+				}
+			} else {
+				_, err = CreateTeamIfMissing(ctx, client, r.GetLogin(), teamReviewers)
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
 		}
 	}
 
@@ -115,9 +140,6 @@ func runProtect() {
 			if repo.GetOwner().GetType() == OwnerTypeUser {
 				continue // don't protect personal repos
 			}
-			if freeOrgs[repo.GetOwner().GetLogin()] && repo.GetPrivate() {
-				continue
-			}
 			if repo.GetArchived() {
 				continue
 			}
@@ -125,10 +147,22 @@ func runProtect() {
 			//	continue
 			//}
 			if repo.GetPermissions()["admin"] {
+				// for appscode org, add repos by hand to team
+				if repo.GetOwner().GetLogin() != "appscode" {
+					err = TeamMaintainsRepo(ctx, client, repo.GetOwner().GetLogin(), teamReviewers, repo.GetName())
+					if err != nil {
+						log.Fatalln(err)
+					}
+				}
+
+				if freeOrgs[repo.GetOwner().GetLogin()] && repo.GetPrivate() {
+					continue
+				}
 				err = ProtectRepo(ctx, client, repo)
 				if err != nil {
 					log.Fatalln(err)
 				}
+				time.Sleep(10 * time.Millisecond)
 			}
 		}
 	}
@@ -146,9 +180,26 @@ func ListOrgs(ctx context.Context, client *github.Client, opt *github.ListOption
 	var result []*github.Organization
 	for {
 		orgs, resp, err := client.Organizations.List(ctx, "", opt)
-		if err != nil {
-			break
+		switch e := err.(type) {
+		case *github.RateLimitError:
+			time.Sleep(time.Until(e.Rate.Reset.Time.Add(skew)))
+			continue
+		case *github.AbuseRateLimitError:
+			time.Sleep(e.GetRetryAfter())
+			continue
+		case *github.ErrorResponse:
+			if e.Response.StatusCode == http.StatusNotFound {
+				log.Println(err)
+				break
+			} else {
+				return nil, err
+			}
+		default:
+			if e != nil {
+				return nil, err
+			}
 		}
+
 		result = append(result, orgs...)
 		if resp.NextPage == 0 {
 			break
@@ -163,9 +214,26 @@ func ListRepos(ctx context.Context, client *github.Client, user string, opt *git
 	var result []*github.Repository
 	for {
 		repos, resp, err := client.Repositories.List(ctx, "", opt)
-		if err != nil {
-			break
+		switch e := err.(type) {
+		case *github.RateLimitError:
+			time.Sleep(time.Until(e.Rate.Reset.Time.Add(skew)))
+			continue
+		case *github.AbuseRateLimitError:
+			time.Sleep(e.GetRetryAfter())
+			continue
+		case *github.ErrorResponse:
+			if e.Response.StatusCode == http.StatusNotFound {
+				log.Println(err)
+				break
+			} else {
+				return nil, err
+			}
+		default:
+			if e != nil {
+				return nil, err
+			}
 		}
+
 		result = append(result, repos...)
 		if resp.NextPage == 0 {
 			break
@@ -185,9 +253,26 @@ func ListBranches(ctx context.Context, client *github.Client, repo *github.Repos
 	var result []*github.Branch
 	for {
 		branch, resp, err := client.Repositories.ListBranches(ctx, repo.Owner.GetLogin(), repo.GetName(), opt)
-		if err != nil {
-			break
+		switch e := err.(type) {
+		case *github.RateLimitError:
+			time.Sleep(time.Until(e.Rate.Reset.Time.Add(skew)))
+			continue
+		case *github.AbuseRateLimitError:
+			time.Sleep(e.GetRetryAfter())
+			continue
+		case *github.ErrorResponse:
+			if e.Response.StatusCode == http.StatusNotFound {
+				log.Println(err)
+				break
+			} else {
+				return nil, err
+			}
+		default:
+			if e != nil {
+				return nil, err
+			}
 		}
+
 		result = append(result, branch...)
 		if resp.NextPage == 0 {
 			break
@@ -247,7 +332,7 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			// Apps:  []string{"kodiakhq"},
 		},
 	}
-	if owner == "appscode" && private {
+	if freeOrgs[owner] && private {
 		p.Restrictions.Apps = []string{"kodiak-appscode"}
 	} else {
 		p.Restrictions.Apps = []string{"kodiakhq"}
@@ -297,4 +382,82 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 	//}
 	_, _, err := client.Repositories.UpdateBranchProtection(ctx, owner, repo, branch, p)
 	return err
+}
+func TeamMaintainsRepo(ctx context.Context, client *github.Client, org, team, repo string) error {
+	for {
+		_, err := client.Teams.AddTeamRepoBySlug(ctx, org, team, org, repo, &github.TeamAddTeamRepoOptions{
+			Permission: "maintain",
+		})
+		switch e := err.(type) {
+		case *github.RateLimitError:
+			time.Sleep(time.Until(e.Rate.Reset.Time.Add(skew)))
+			continue
+		case *github.AbuseRateLimitError:
+			time.Sleep(e.GetRetryAfter())
+			continue
+		case *github.ErrorResponse:
+			if e.Response.StatusCode == http.StatusNotFound {
+				log.Println(err)
+				break
+			} else {
+				return err
+			}
+		default:
+			if e != nil {
+				return err
+			}
+		}
+		return nil
+	}
+}
+
+func CreateTeamIfMissing(ctx context.Context, client *github.Client, org, team string) (int64, error) {
+GET_TEAM:
+	for {
+		t, _, err := client.Teams.GetTeamBySlug(ctx, org, team)
+		switch e := err.(type) {
+		case *github.RateLimitError:
+			time.Sleep(time.Until(e.Rate.Reset.Time.Add(skew)))
+			continue
+		case *github.AbuseRateLimitError:
+			time.Sleep(e.GetRetryAfter())
+			continue
+		case *github.ErrorResponse:
+			if e.Response.StatusCode == http.StatusNotFound {
+				log.Println(err)
+				break GET_TEAM
+			} else {
+				return 0, err
+			}
+		default:
+			if e != nil {
+				return 0, err
+			}
+		}
+		return t.GetID(), nil // team exists
+	}
+
+	privacy := "closed"
+	for {
+		t, _, err := client.Teams.CreateTeam(ctx, org, github.NewTeam{
+			Name:        team,
+			Description: nil,
+			Privacy:     &privacy,
+		})
+		switch e := err.(type) {
+		case *github.RateLimitError:
+			time.Sleep(time.Until(e.Rate.Reset.Time.Add(skew)))
+			continue
+		case *github.AbuseRateLimitError:
+			time.Sleep(e.GetRetryAfter())
+			continue
+		case *github.ErrorResponse:
+			return 0, err
+		default:
+			if e != nil {
+				return 0, err
+			}
+		}
+		return t.GetID(), nil
+	}
 }
