@@ -39,7 +39,7 @@ func NewCmdCopyRelease() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:               "copy-release",
-		Short:             "copy releases from one GitHub repo to another repo",
+		Short:             "Copy releases from one GitHub repo to another repo",
 		DisableAutoGenTag: true,
 		Run: func(cmd *cobra.Command, args []string) {
 			copyRelease(src, dest)
