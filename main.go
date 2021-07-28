@@ -27,7 +27,7 @@ import (
 func main() {
 	rootCmd := cmds.NewRootCmd(Version)
 
-	logs.Init(rootCmd, true)
+	logs.Init(rootCmd, false)
 	defer logs.FlushLogs()
 
 	if err := rootCmd.Execute(); err != nil {

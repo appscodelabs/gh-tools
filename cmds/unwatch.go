@@ -26,6 +26,7 @@ import (
 	"github.com/google/go-github/v35/github"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
+	"gomodules.xyz/flags"
 )
 
 var (
@@ -37,6 +38,9 @@ func NewCmdStopWatch() *cobra.Command {
 		Use:               "stop-watching",
 		Short:             "Stop watching repos of a org",
 		DisableAutoGenTag: true,
+		PersistentPreRun: func(c *cobra.Command, args []string) {
+			flags.PrintFlags(c.Flags())
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			runStopWatch()
 		},

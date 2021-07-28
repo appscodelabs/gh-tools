@@ -25,6 +25,7 @@ import (
 	"github.com/google/go-github/v35/github"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
+	"gomodules.xyz/flags"
 	"gomodules.xyz/pointer"
 )
 
@@ -33,6 +34,9 @@ func NewCmdAddLabels() *cobra.Command {
 		Use:               "add-labels",
 		Short:             "Add labels",
 		DisableAutoGenTag: true,
+		PersistentPreRun: func(c *cobra.Command, args []string) {
+			flags.PrintFlags(c.Flags())
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			addLabels()
 		},

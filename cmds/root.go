@@ -18,10 +18,8 @@ package cmds
 
 import (
 	"flag"
-	"log"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 	v "gomodules.xyz/x/version"
 )
 
@@ -30,11 +28,6 @@ func NewRootCmd(version string) *cobra.Command {
 		Use:               "gh-tools [command]",
 		Short:             `GitHub tools by AppsCode`,
 		DisableAutoGenTag: true,
-		PersistentPreRun: func(c *cobra.Command, args []string) {
-			c.Flags().VisitAll(func(flag *pflag.Flag) {
-				log.Printf("FLAG: --%s=%q", flag.Name, flag.Value)
-			})
-		},
 	}
 	cmd.PersistentFlags().AddGoFlagSet(flag.CommandLine)
 	// ref: https://github.com/kubernetes/kubernetes/issues/17162#issuecomment-225596212
@@ -43,6 +36,7 @@ func NewRootCmd(version string) *cobra.Command {
 	cmd.AddCommand(NewCmdProtect())
 	cmd.AddCommand(NewCmdStarReport())
 	cmd.AddCommand(NewCmdListOrgs())
+	cmd.AddCommand(NewCmdListRepos())
 	cmd.AddCommand(NewCmdStopWatch())
 	cmd.AddCommand(v.NewCmdVersion())
 	cmd.AddCommand(NewCmdChangelog())

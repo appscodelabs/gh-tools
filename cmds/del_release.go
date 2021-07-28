@@ -26,6 +26,7 @@ import (
 	"github.com/google/go-github/v35/github"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
+	"gomodules.xyz/flags"
 )
 
 func NewCmdDeleteRelease() *cobra.Command {
@@ -35,6 +36,9 @@ func NewCmdDeleteRelease() *cobra.Command {
 		Use:               "delete-release",
 		Short:             "Delete releases from one GitHub repo",
 		DisableAutoGenTag: true,
+		PersistentPreRun: func(c *cobra.Command, args []string) {
+			flags.PrintFlags(c.Flags())
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			deleteRelease(src)
 		},

@@ -21,29 +21,29 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 
 	"github.com/google/go-github/v35/github"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
-	"gomodules.xyz/flags"
+	"gomodules.xyz/sets"
 )
 
-func NewCmdListOrgs() *cobra.Command {
+func NewCmdListRepos() *cobra.Command {
+	var orgs []string
 	cmd := &cobra.Command{
-		Use:               "list-orgs",
-		Short:             "List orgs",
+		Use:               "list-repos",
+		Short:             "List repos for repo-refresher scripts",
 		DisableAutoGenTag: true,
-		PersistentPreRun: func(c *cobra.Command, args []string) {
-			flags.PrintFlags(c.Flags())
-		},
 		Run: func(cmd *cobra.Command, args []string) {
-			runListOrgs()
+			printRepoList(sets.NewString(orgs...))
 		},
 	}
+	cmd.Flags().StringSliceVar(&orgs, "orgs", orgs, "Orgs for which repo list will be printed")
 	return cmd
 }
 
-func runListOrgs() {
+func printRepoList(orgs sets.String) {
 	token, found := os.LookupEnv("GH_TOOLS_TOKEN")
 	if !found {
 		log.Fatalln("GH_TOOLS_TOKEN env var is not set")
@@ -64,19 +64,33 @@ func runListOrgs() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Println("user: ", user.GetLogin())
 
-	{
-		opt := &github.ListOptions{PerPage: 50}
-		orgs, err := ListOrgs(ctx, client, opt)
-		if err != nil {
-			log.Fatal(err)
+	opt := &github.RepositoryListOptions{
+		Affiliation: "owner,organization_member",
+		ListOptions: github.ListOptions{PerPage: 50},
+	}
+	repos, err := ListRepos(ctx, client, user.GetLogin(), opt)
+	if err != nil {
+		log.Fatal(err)
+	}
+	listing := make([]string, 0, len(repos))
+	for _, repo := range repos {
+		if repo.GetOwner().GetType() == OwnerTypeUser {
+			continue // don't protect personal repos
 		}
-		fmt.Println()
-		log.Printf("Found %d orgs", len(orgs))
-		fmt.Println()
-		for _, org := range orgs {
-			fmt.Println(org.GetLogin())
+		if repo.GetArchived() {
+			continue
 		}
+		//if repo.GetFork() {
+		//	continue
+		//}
+		if repo.GetPermissions()["admin"] && (orgs.Len() == 0 || orgs.Has(repo.GetOwner().GetLogin())) {
+			listing = append(listing, fmt.Sprintf("github.com/%s/%s", repo.GetOwner().GetLogin(), repo.GetName()))
+		}
+	}
+
+	sort.Strings(listing)
+	for _, entry := range listing {
+		fmt.Println(entry)
 	}
 }

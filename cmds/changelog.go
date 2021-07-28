@@ -29,6 +29,7 @@ import (
 	"github.com/appscodelabs/gh-tools/internal/git"
 
 	"github.com/spf13/cobra"
+	"gomodules.xyz/flags"
 )
 
 func NewCmdChangelog() *cobra.Command {
@@ -39,6 +40,9 @@ func NewCmdChangelog() *cobra.Command {
 		Use:               "changelog",
 		Short:             "generate changelog",
 		DisableAutoGenTag: true,
+		PersistentPreRun: func(c *cobra.Command, args []string) {
+			flags.PrintFlags(c.Flags())
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			runChangelog(sort, exclude)
 		},

@@ -11,5 +11,6 @@ require (
 	golang.org/x/oauth2 v0.0.0-20190604053449-0f29369cfe45
 	gomodules.xyz/logs v0.0.2
 	gomodules.xyz/pointer v0.0.0-20201105071923-daf60fa55209
+	gomodules.xyz/sets v0.0.0-20210218105342-2efe2fb519a2
 	gomodules.xyz/x v0.0.5
 )
