@@ -349,13 +349,12 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 		(owner == "stashed" && repo == "catalog") {
 		p.RequiredStatusChecks.Contexts = append(
 			p.RequiredStatusChecks.Contexts,
-			"Kubernetes (v1.14.10)",
-			"Kubernetes (v1.15.12)",
 			"Kubernetes (v1.16.15)",
 			"Kubernetes (v1.17.17)",
 			"Kubernetes (v1.18.15)",
 			"Kubernetes (v1.19.7)",
 			"Kubernetes (v1.20.2)",
+			"Kubernetes (v1.21.1)",
 		)
 	}
 	if repo == "ui-wizards" {
@@ -368,6 +367,7 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			"Kubernetes (v1.18.15)",
 			"Kubernetes (v1.19.7)",
 			"Kubernetes (v1.20.2)",
+			"Kubernetes (v1.21.1)",
 		)
 	}
 	if strings.EqualFold(repo, "CHANGELOG") {
