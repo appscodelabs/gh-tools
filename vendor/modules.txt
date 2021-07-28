@@ -24,7 +24,6 @@ github.com/pmezard/go-difflib/difflib
 ## explicit
 github.com/spf13/cobra
 # github.com/spf13/pflag v1.0.5
-## explicit
 github.com/spf13/pflag
 # github.com/stretchr/testify v1.7.0
 ## explicit
@@ -47,6 +46,7 @@ golang.org/x/oauth2/internal
 # gomodules.xyz/clock v0.0.0-20200817085942-06523dba733f
 gomodules.xyz/clock
 # gomodules.xyz/flags v0.1.0
+## explicit
 gomodules.xyz/flags
 # gomodules.xyz/logs v0.0.2
 ## explicit
