@@ -300,6 +300,10 @@ func ProtectRepo(ctx context.Context, client *github.Client, repo *github.Reposi
 	return nil
 }
 
+var requiredStatusChecks = map[string][]string{
+	"kubeform/gen-repo-refresher": {"DCO", "license/cla"},
+}
+
 func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, branch string, private bool) error {
 	fmt.Printf("[UPDATE] %s/%s:%s will be changed to protected\n", owner, repo, branch)
 	if dryrun {
@@ -380,9 +384,15 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 	//if branch == "master" {
 	//	p.Restrictions.Apps = []string{"kodiakhq"}
 	//}
+
+	if predefinedContexts, ok := requiredStatusChecks[fmt.Sprintf("%s/%s", owner, repo)]; ok {
+		p.RequiredStatusChecks.Contexts = predefinedContexts
+	}
+
 	_, _, err := client.Repositories.UpdateBranchProtection(ctx, owner, repo, branch, p)
 	return err
 }
+
 func TeamMaintainsRepo(ctx context.Context, client *github.Client, org, team, repo string) error {
 	for {
 		_, err := client.Teams.AddTeamRepoBySlug(ctx, org, team, org, repo, &github.TeamAddTeamRepoOptions{
