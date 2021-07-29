@@ -306,6 +306,7 @@ func ProtectRepo(ctx context.Context, client *github.Client, repo *github.Reposi
 
 var requiredStatusChecks = map[string][]string{
 	"kubeform/gen-repo-refresher": {"DCO", "license/cla"},
+	"kubeguard/guard":             {"DCO", "Build"},
 }
 
 func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, branch string, private bool) error {
