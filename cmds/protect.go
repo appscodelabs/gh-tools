@@ -381,6 +381,15 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			"Kubernetes (v1.22.0)",
 		)
 	}
+	if owner == "voyagermesh" {
+		p.RequiredStatusChecks.Contexts = append(
+			p.RequiredStatusChecks.Contexts,
+			"Kubernetes (v1.19.11)",
+			"Kubernetes (v1.20.7)",
+			"Kubernetes (v1.21.2)",
+			"Kubernetes (v1.22.0)",
+		)
+	}
 	if strings.EqualFold(repo, "CHANGELOG") {
 		// Avoid dismissing stale reviews, since delay in kodiak auto approval can fail release process.
 		p.RequiredPullRequestReviews.DismissStaleReviews = false
