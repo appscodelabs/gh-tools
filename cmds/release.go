@@ -25,7 +25,7 @@ import (
 
 	"github.com/appscodelabs/gh-tools/internal/git"
 
-	"github.com/google/go-github/v35/github"
+	"github.com/google/go-github/v42/github"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 	"gomodules.xyz/flags"
