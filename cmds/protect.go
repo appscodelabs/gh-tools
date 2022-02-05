@@ -297,7 +297,13 @@ func ProtectRepo(ctx context.Context, client *github.Client, repo *github.Reposi
 			strings.HasPrefix(branch.GetName(), "kubernetes-") ||
 			strings.HasPrefix(branch.GetName(), "ac-") {
 			if err := ProtectBranch(ctx, client, repo.Owner.GetLogin(), repo.GetName(), branch.GetName(), repo.GetPrivate()); err != nil {
-				return err
+				switch err.(type) {
+				case *github.RateLimitError, *github.AbuseRateLimitError:
+					return err
+				case *github.ErrorResponse:
+					log.Println("error", err)
+				}
+				return nil // ignore error
 			}
 		}
 	}
