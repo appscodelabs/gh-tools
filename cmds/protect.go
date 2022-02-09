@@ -425,7 +425,7 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 func TeamMaintainsRepo(ctx context.Context, client *github.Client, org, team, repo string) error {
 	for {
 		_, err := client.Teams.AddTeamRepoBySlug(ctx, org, team, org, repo, &github.TeamAddTeamRepoOptions{
-			Permission: "maintain",
+			Permission: "admin",
 		})
 		switch e := err.(type) {
 		case *github.RateLimitError:
