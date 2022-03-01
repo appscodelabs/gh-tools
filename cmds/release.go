@@ -68,7 +68,7 @@ func runRelease(owner, repo string, draft, prerelease bool) {
 		log.Fatalln("GH_TOOLS_TOKEN env var is not set")
 	}
 
-	//github client
+	// github client
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	tc := oauth2.NewClient(ctx, ts)
@@ -94,13 +94,13 @@ func runRelease(owner, repo string, draft, prerelease bool) {
 		Prerelease: &prerelease,
 	}
 
-	//create release
+	// create release
 	release, _, err = client.Repositories.CreateRelease(ctx, owner, repo, release)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	//upload all files present in dist
+	// upload all files present in dist
 	dirToWalk := "dist"
 	subDirToSkip := "local"
 	err = filepath.Walk(dirToWalk, func(path string, info os.FileInfo, err error) error {
@@ -118,7 +118,7 @@ func runRelease(owner, repo string, draft, prerelease bool) {
 				log.Fatal(err)
 			}
 
-			//upload artifacts
+			// upload artifacts
 			_, _, err = client.Repositories.UploadReleaseAsset(
 				ctx,
 				owner,

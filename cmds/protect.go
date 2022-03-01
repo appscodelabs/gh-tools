@@ -35,8 +35,8 @@ import (
 const (
 	skew            = 10 * time.Second
 	teamReviewers   = "reviewers"
-	teamFEReviewers = "fe-reviewers" //frontend
-	teamBEReviewers = "be-reviewers" //backend
+	teamFEReviewers = "fe-reviewers" // frontend
+	teamBEReviewers = "be-reviewers" // backend
 )
 
 var (

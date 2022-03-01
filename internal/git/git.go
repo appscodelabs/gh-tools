@@ -35,7 +35,7 @@ func IsRepo() bool {
 func Run(args ...string) (string, error) {
 	// TODO: use exex.CommandContext here and refactor.
 	/* #nosec */
-	var cmd = exec.Command("git", args...)
+	cmd := exec.Command("git", args...)
 	log.WithField("args", args).Debug("running git")
 	bts, err := cmd.CombinedOutput()
 	log.WithField("output", string(bts)).

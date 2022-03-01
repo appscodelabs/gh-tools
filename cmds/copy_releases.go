@@ -74,7 +74,7 @@ func copyRelease(src, dest string) {
 		log.Fatalln("GH_TOOLS_TOKEN env var is not set")
 	}
 
-	//github client
+	// github client
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	tc := oauth2.NewClient(ctx, ts)
@@ -102,7 +102,7 @@ func copyRelease(src, dest string) {
 
 		// get release and add any missing content
 		if existingRelease, ok := destReleaseMap[srcRelease.GetTagName()]; !ok {
-			//create destRelease
+			// create destRelease
 			destRelease = &github.RepositoryRelease{
 				TagName:    srcRelease.TagName,
 				Name:       srcRelease.Name,
@@ -131,7 +131,7 @@ func copyRelease(src, dest string) {
 			fmt.Println(asset.GetBrowserDownloadURL())
 
 			dir := filepath.Join("/tmp", "github.com", srcOwner, srcRepo, srcRelease.GetTagName())
-			if err = os.MkdirAll(dir, 0755); err != nil {
+			if err = os.MkdirAll(dir, 0o755); err != nil {
 				log.Fatalln(err)
 			}
 			buf.Reset()
@@ -145,7 +145,7 @@ func copyRelease(src, dest string) {
 			}
 			_ = resp.Body.Close()
 
-			if err = ioutil.WriteFile(filepath.Join(dir, asset.GetName()), buf.Bytes(), 0644); err != nil {
+			if err = ioutil.WriteFile(filepath.Join(dir, asset.GetName()), buf.Bytes(), 0o644); err != nil {
 				log.Fatalln(err)
 			}
 
@@ -154,7 +154,7 @@ func copyRelease(src, dest string) {
 				log.Fatal(err)
 			}
 
-			//upload artifacts
+			// upload artifacts
 			_, _, err = client.Repositories.UploadReleaseAsset(
 				ctx,
 				destOwner,
