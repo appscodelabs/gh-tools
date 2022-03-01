@@ -33,9 +33,7 @@ import (
 	"gomodules.xyz/flags"
 )
 
-var (
-	dirStarReport = "/home/tamal/go/src/github.com/tamalsaha/star-report"
-)
+var dirStarReport = "/home/tamal/go/src/github.com/tamalsaha/star-report"
 
 func NewCmdStarReport() *cobra.Command {
 	cmd := &cobra.Command{
@@ -106,7 +104,7 @@ func runStarReport() {
 
 			if repo.GetPermissions()["admin"] {
 				dir := filepath.Join(dirStarReport, repo.Owner.GetLogin(), repo.GetName())
-				err = os.MkdirAll(dir, 0755)
+				err = os.MkdirAll(dir, 0o755)
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -118,7 +116,7 @@ func runStarReport() {
 					if err == nil {
 						data, err := json.MarshalIndent(stargazers, "", "  ")
 						if err == nil {
-							err = ioutil.WriteFile(filepath.Join(dir, "stargazers.json"), data, 0644)
+							err = ioutil.WriteFile(filepath.Join(dir, "stargazers.json"), data, 0o644)
 							if err != nil {
 								log.Println(err)
 							}
@@ -132,7 +130,7 @@ func runStarReport() {
 					if err == nil {
 						data, err := json.MarshalIndent(watchers, "", "  ")
 						if err == nil {
-							err = ioutil.WriteFile(filepath.Join(dir, "watchers.json"), data, 0644)
+							err = ioutil.WriteFile(filepath.Join(dir, "watchers.json"), data, 0o644)
 							if err != nil {
 								log.Println(err)
 							}

@@ -61,7 +61,7 @@ func deleteRelease(src string) {
 		log.Fatalln("GH_TOOLS_TOKEN env var is not set")
 	}
 
-	//github client
+	// github client
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	tc := oauth2.NewClient(ctx, ts)

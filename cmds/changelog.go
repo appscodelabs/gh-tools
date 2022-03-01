@@ -58,23 +58,23 @@ func runChangelog(sort string, exclude []string) {
 		log.Fatal(err)
 	}
 
-	err = os.MkdirAll("dist", 0755)
+	err = os.MkdirAll("dist", 0o755)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	var path = filepath.Join("dist", "CHANGELOG.md")
+	path := filepath.Join("dist", "CHANGELOG.md")
 
 	releaseNotes := fmt.Sprintf("## Changelog\n\n%v\n", strings.Join(entries, "\n"))
 
-	err = ioutil.WriteFile(path, []byte(releaseNotes), 0644)
+	err = ioutil.WriteFile(path, []byte(releaseNotes), 0o644)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
 func buildChangelog(sort string, exclude []string) ([]string, error) {
-	//need current tag
+	// need current tag
 	tag, err := git.Clean(git.Run("tag", "-l", "--points-at", "HEAD"))
 	if err != nil {
 		return nil, err
@@ -84,7 +84,7 @@ func buildChangelog(sort string, exclude []string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	var entries = strings.Split(log, "\n")
+	entries := strings.Split(log, "\n")
 	entries = entries[0 : len(entries)-1]
 
 	entries, err = filterEntries(exclude, entries)
@@ -111,7 +111,7 @@ func sortEntries(direction string, entries []string) []string {
 		return entries
 	}
 
-	var result = make([]string, len(entries))
+	result := make([]string, len(entries))
 	copy(result, entries)
 	sort.Slice(result, func(i, j int) bool {
 		_, imsg := extractCommitInfo(result[i])
@@ -152,7 +152,7 @@ func previous(tag string) (result ref, err error) {
 }
 
 func gitLog(refs ...string) (string, error) {
-	var args = []string{"log", "--pretty=oneline", "--abbrev-commit", "--no-decorate", "--no-color"}
+	args := []string{"log", "--pretty=oneline", "--abbrev-commit", "--no-decorate", "--no-color"}
 	args = append(args, refs...)
 	return git.Run(args...)
 }

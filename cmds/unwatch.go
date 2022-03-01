@@ -29,9 +29,7 @@ import (
 	"gomodules.xyz/flags"
 )
 
-var (
-	orgsToWatchRepos []string
-)
+var orgsToWatchRepos []string
 
 func NewCmdStopWatch() *cobra.Command {
 	cmd := &cobra.Command{
