@@ -41,6 +41,8 @@ func NewCmdAddLabels() *cobra.Command {
 			addLabels()
 		},
 	}
+	cmd.Flags().IntVar(&shards, "shards", shards, "Total number of shards")
+	cmd.Flags().IntVar(&shardIndex, "shard-index", shardIndex, "Shard Index to be processed")
 	return cmd
 }
 
@@ -73,7 +75,10 @@ func addLabels() {
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		orgs = ShardOrgs(orgs, shardIndex, shards)
 		log.Printf("Found %d orgs", len(orgs))
+
 		for _, org := range orgs {
 			fmt.Println(">>> " + org.GetLogin())
 		}

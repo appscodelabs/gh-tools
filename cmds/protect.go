@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"sort"
@@ -40,8 +41,10 @@ const (
 )
 
 var (
-	dryrun   = false
-	freeOrgs = map[string]bool{}
+	dryrun     = false
+	freeOrgs   = map[string]bool{}
+	shardIndex = -1
+	shards     = -1
 )
 
 func NewCmdProtect() *cobra.Command {
@@ -57,6 +60,8 @@ func NewCmdProtect() *cobra.Command {
 		},
 	}
 	cmd.Flags().BoolVar(&dryrun, "dryrun", dryrun, "If set to true, will not apply changes.")
+	cmd.Flags().IntVar(&shards, "shards", shards, "Total number of shards")
+	cmd.Flags().IntVar(&shardIndex, "shard-index", shardIndex, "Shard Index to be processed")
 	return cmd
 }
 
@@ -102,7 +107,10 @@ func runProtect() {
 		if err != nil {
 			log.Fatal(err)
 		}
+
+		orgs = ShardOrgs(orgs, shardIndex, shards)
 		log.Printf("Found %d orgs", len(orgs))
+
 		for _, org := range orgs {
 			fmt.Println(">>> " + org.GetLogin())
 			// list orgs api does not return plan info
@@ -212,6 +220,26 @@ func ListOrgs(ctx context.Context, client *github.Client, opt *github.ListOption
 	}
 	sort.Slice(result, func(i, j int) bool { return result[i].GetLogin() < result[j].GetLogin() })
 	return result, nil
+}
+
+func ShardOrgs(in []*github.Organization, shardIndex, shards int) []*github.Organization {
+	if shardIndex < 0 || shards < 1 {
+		return in
+	}
+	sort.Slice(in, func(i, j int) bool {
+		return in[i].GetLogin() < in[j].GetLogin()
+	})
+	itemsPerShard := int(math.Ceil(float64(len(in)) / float64(shards)))
+	start := shardIndex * itemsPerShard
+	end := min(start+itemsPerShard, len(in))
+	return in[start:end]
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 func ListRepos(ctx context.Context, client *github.Client, user string, opt *github.RepositoryListOptions) ([]*github.Repository, error) {
