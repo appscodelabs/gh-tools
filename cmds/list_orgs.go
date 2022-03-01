@@ -40,6 +40,8 @@ func NewCmdListOrgs() *cobra.Command {
 			runListOrgs()
 		},
 	}
+	cmd.Flags().IntVar(&shards, "shards", shards, "Total number of shards")
+	cmd.Flags().IntVar(&shardIndex, "shard-index", shardIndex, "Shard Index to be processed")
 	return cmd
 }
 
@@ -73,8 +75,11 @@ func runListOrgs() {
 			log.Fatal(err)
 		}
 		fmt.Println()
+
+		orgs = ShardOrgs(orgs, shardIndex, shards)
 		log.Printf("Found %d orgs", len(orgs))
 		fmt.Println()
+
 		for _, org := range orgs {
 			fmt.Println(org.GetLogin())
 		}
