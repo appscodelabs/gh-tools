@@ -43,6 +43,7 @@ func NewCmdAddLabels() *cobra.Command {
 	}
 	cmd.Flags().IntVar(&shards, "shards", shards, "Total number of shards")
 	cmd.Flags().IntVar(&shardIndex, "shard-index", shardIndex, "Shard Index to be processed")
+	cmd.Flags().BoolVar(&fork, "fork", fork, "If true, return forked repos")
 	return cmd
 }
 
@@ -89,7 +90,7 @@ func addLabels() {
 			Affiliation: "owner,organization_member",
 			ListOptions: github.ListOptions{PerPage: 50},
 		}
-		repos, err := ListRepos(ctx, client, user.GetLogin(), opt)
+		repos, err := ListRepos(ctx, client, user.GetLogin(), opt, fork)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -99,12 +100,6 @@ func addLabels() {
 				continue
 			}
 			if repo.GetPrivate() {
-				continue
-			}
-			if repo.GetArchived() {
-				continue
-			}
-			if repo.GetFork() {
 				continue
 			}
 			if repo.GetPermissions()["admin"] {

@@ -36,14 +36,15 @@ func NewCmdListRepos() *cobra.Command {
 		Short:             "List repos for repo-refresher scripts",
 		DisableAutoGenTag: true,
 		Run: func(cmd *cobra.Command, args []string) {
-			printRepoList(sets.NewString(orgs...))
+			printRepoList(sets.NewString(orgs...), fork)
 		},
 	}
 	cmd.Flags().StringSliceVar(&orgs, "orgs", orgs, "Orgs for which repo list will be printed")
+	cmd.Flags().BoolVar(&fork, "fork", fork, "If true, return forked repos")
 	return cmd
 }
 
-func printRepoList(orgs sets.String) {
+func printRepoList(orgs sets.String, fork bool) {
 	token, found := os.LookupEnv("GH_TOOLS_TOKEN")
 	if !found {
 		log.Fatalln("GH_TOOLS_TOKEN env var is not set")
@@ -69,7 +70,7 @@ func printRepoList(orgs sets.String) {
 		Affiliation: "owner,organization_member",
 		ListOptions: github.ListOptions{PerPage: 50},
 	}
-	repos, err := ListRepos(ctx, client, user.GetLogin(), opt)
+	repos, err := ListRepos(ctx, client, user.GetLogin(), opt, fork)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -78,12 +79,6 @@ func printRepoList(orgs sets.String) {
 		if repo.GetOwner().GetType() == OwnerTypeUser {
 			continue // don't protect personal repos
 		}
-		if repo.GetArchived() {
-			continue
-		}
-		//if repo.GetFork() {
-		//	continue
-		//}
 		if repo.GetPermissions()["admin"] && (orgs.Len() == 0 || orgs.Has(repo.GetOwner().GetLogin())) {
 			listing = append(listing, fmt.Sprintf("github.com/%s/%s", repo.GetOwner().GetLogin(), repo.GetName()))
 		}

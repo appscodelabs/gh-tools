@@ -45,6 +45,7 @@ var (
 	freeOrgs   = map[string]bool{}
 	shardIndex = -1
 	shards     = -1
+	fork       bool
 )
 
 func NewCmdProtect() *cobra.Command {
@@ -62,6 +63,7 @@ func NewCmdProtect() *cobra.Command {
 	cmd.Flags().BoolVar(&dryrun, "dryrun", dryrun, "If set to true, will not apply changes.")
 	cmd.Flags().IntVar(&shards, "shards", shards, "Total number of shards")
 	cmd.Flags().IntVar(&shardIndex, "shard-index", shardIndex, "Shard Index to be processed")
+	cmd.Flags().BoolVar(&fork, "fork", fork, "If true, return forked repos")
 	return cmd
 }
 
@@ -143,7 +145,7 @@ func runProtect() {
 			Affiliation: "owner,organization_member",
 			ListOptions: github.ListOptions{PerPage: 50},
 		}
-		repos, err := ListRepos(ctx, client, user.GetLogin(), opt)
+		repos, err := ListRepos(ctx, client, user.GetLogin(), opt, fork)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -152,12 +154,6 @@ func runProtect() {
 			if repo.GetOwner().GetType() == OwnerTypeUser {
 				continue // don't protect personal repos
 			}
-			if repo.GetArchived() {
-				continue
-			}
-			//if repo.GetFork() {
-			//	continue
-			//}
 			if repo.GetPermissions()["admin"] {
 				// for appscode org, add repos by hand to team
 				if repo.GetOwner().GetLogin() != "appscode" {
@@ -242,7 +238,7 @@ func min(a, b int) int {
 	return b
 }
 
-func ListRepos(ctx context.Context, client *github.Client, user string, opt *github.RepositoryListOptions) ([]*github.Repository, error) {
+func ListRepos(ctx context.Context, client *github.Client, user string, opt *github.RepositoryListOptions, fork bool) ([]*github.Repository, error) {
 	var result []*github.Repository
 	for {
 		repos, resp, err := client.Repositories.List(ctx, "", opt)
@@ -266,7 +262,15 @@ func ListRepos(ctx context.Context, client *github.Client, user string, opt *git
 			}
 		}
 
-		result = append(result, repos...)
+		for idx := range repos {
+			if repos[idx].GetArchived() {
+				continue
+			}
+			if repos[idx].GetFork() && !fork {
+				continue
+			}
+			result = append(result, repos[idx])
+		}
 		if resp.NextPage == 0 {
 			break
 		}
