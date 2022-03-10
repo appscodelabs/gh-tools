@@ -383,7 +383,7 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			// Apps:  []string{"kodiakhq"},
 		},
 	}
-	if freeOrgs[owner] && private {
+	if owner == "bytebuilders" {
 		p.Restrictions.Apps = []string{"kodiak-appscode"}
 	} else {
 		p.Restrictions.Apps = []string{"kodiakhq"}
