@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/apex/log v1.9.0
-	github.com/google/go-github/v42 v42.0.0
+	github.com/google/go-github/v43 v43.0.0
 	github.com/spf13/cobra v1.3.0
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
@@ -12,7 +12,7 @@ require (
 	gomodules.xyz/logs v0.0.6
 	gomodules.xyz/pointer v0.1.0
 	gomodules.xyz/sets v0.2.1
-	gomodules.xyz/x v0.0.10
+	gomodules.xyz/x v0.0.13
 )
 
 require (
