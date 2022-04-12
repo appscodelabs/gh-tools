@@ -383,7 +383,7 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			// Apps:  []string{"kodiakhq"},
 		},
 	}
-	if owner == "bytebuilders" {
+	if owner == "bytebuilders" || owner == "kubedb" {
 		p.Restrictions.Apps = []string{"kodiak-appscode"}
 	} else {
 		p.Restrictions.Apps = []string{"kodiakhq"}
@@ -400,7 +400,7 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 		(owner == "stashed" && repo == "catalog") {
 		p.RequiredStatusChecks.Contexts = append(
 			p.RequiredStatusChecks.Contexts,
-			"Kubernetes (v1.16.15)",
+			// "Kubernetes (v1.16.15)",
 			// "Kubernetes (v1.17.17)",
 			"Kubernetes (v1.18.19)",
 			"Kubernetes (v1.19.11)",
@@ -415,7 +415,7 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			p.RequiredStatusChecks.Contexts,
 			//"Kubernetes (v1.14.10)",
 			//"Kubernetes (v1.15.11)",
-			"Kubernetes (v1.16.15)",
+			// "Kubernetes (v1.16.15)",
 			// "Kubernetes (v1.17.17)",
 			"Kubernetes (v1.18.19)",
 			"Kubernetes (v1.19.11)",
