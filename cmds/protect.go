@@ -400,41 +400,39 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 		(owner == "stashed" && repo == "catalog") {
 		p.RequiredStatusChecks.Contexts = append(
 			p.RequiredStatusChecks.Contexts,
-			// "Kubernetes (v1.16.15)",
-			// "Kubernetes (v1.17.17)",
-			"Kubernetes (v1.18.19)",
-			"Kubernetes (v1.19.11)",
-			"Kubernetes (v1.20.7)",
-			"Kubernetes (v1.21.2)",
-			"Kubernetes (v1.22.4)",
-			"Kubernetes (v1.23.3)",
+			"Kubernetes (v1.18.20)",
+			"Kubernetes (v1.19.16)",
+			"Kubernetes (v1.20.15)",
+			"Kubernetes (v1.21.12)",
+			"Kubernetes (v1.22.9)",
+			"Kubernetes (v1.23.6)",
+			"Kubernetes (v1.24.0)",
 		)
 	}
 	if repo == "ui-wizards" {
 		p.RequiredStatusChecks.Contexts = append(
 			p.RequiredStatusChecks.Contexts,
-			//"Kubernetes (v1.14.10)",
-			//"Kubernetes (v1.15.11)",
-			// "Kubernetes (v1.16.15)",
-			// "Kubernetes (v1.17.17)",
-			"Kubernetes (v1.18.19)",
-			"Kubernetes (v1.19.11)",
-			"Kubernetes (v1.20.7)",
-			"Kubernetes (v1.21.2)",
-			"Kubernetes (v1.22.4)",
-			"Kubernetes (v1.23.3)",
+			"Kubernetes (v1.18.20)",
+			"Kubernetes (v1.19.16)",
+			"Kubernetes (v1.20.15)",
+			"Kubernetes (v1.21.12)",
+			"Kubernetes (v1.22.9)",
+			"Kubernetes (v1.23.6)",
+			"Kubernetes (v1.24.0)",
 		)
 	}
 	if owner == "voyagermesh" {
 		p.RequiredStatusChecks.Contexts = append(
 			p.RequiredStatusChecks.Contexts,
-			"Kubernetes (v1.19.11)",
-			"Kubernetes (v1.20.7)",
-			"Kubernetes (v1.21.2)",
-			"Kubernetes (v1.22.4)",
-			"Kubernetes (v1.23.3)",
+			"Kubernetes (v1.19.16)",
+			"Kubernetes (v1.20.15)",
+			"Kubernetes (v1.21.12)",
+			"Kubernetes (v1.22.9)",
+			"Kubernetes (v1.23.6)",
+			"Kubernetes (v1.24.0)",
 		)
 	}
+
 	if strings.EqualFold(repo, "CHANGELOG") {
 		// Avoid dismissing stale reviews, since delay in kodiak auto approval can fail release process.
 		p.RequiredPullRequestReviews.DismissStaleReviews = false
