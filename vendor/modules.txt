@@ -72,8 +72,8 @@ gomodules.xyz/sets
 # gomodules.xyz/wait v0.2.0
 ## explicit; go 1.14
 gomodules.xyz/wait
-# gomodules.xyz/x v0.0.14
-## explicit; go 1.17
+# gomodules.xyz/x v0.0.8
+## explicit; go 1.12
 gomodules.xyz/x/version
 # google.golang.org/appengine v1.6.7
 ## explicit; go 1.11
