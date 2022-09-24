@@ -403,10 +403,11 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			"Kubernetes (v1.18.20)",
 			"Kubernetes (v1.19.16)",
 			"Kubernetes (v1.20.15)",
-			"Kubernetes (v1.21.12)",
-			"Kubernetes (v1.22.9)",
-			"Kubernetes (v1.23.6)",
-			"Kubernetes (v1.24.0)",
+			"Kubernetes (v1.21.14)",
+			"Kubernetes (v1.22.15)",
+			"Kubernetes (v1.23.12)",
+			"Kubernetes (v1.24.6)",
+			"Kubernetes (v1.25.2)",
 		)
 	}
 	if repo == "ui-wizards" {
@@ -415,10 +416,11 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			"Kubernetes (v1.18.20)",
 			"Kubernetes (v1.19.16)",
 			"Kubernetes (v1.20.15)",
-			"Kubernetes (v1.21.12)",
-			"Kubernetes (v1.22.9)",
-			"Kubernetes (v1.23.6)",
-			"Kubernetes (v1.24.0)",
+			"Kubernetes (v1.21.14)",
+			"Kubernetes (v1.22.15)",
+			"Kubernetes (v1.23.12)",
+			"Kubernetes (v1.24.6)",
+			"Kubernetes (v1.25.2)",
 		)
 	}
 	if owner == "voyagermesh" {
@@ -426,10 +428,11 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			p.RequiredStatusChecks.Contexts,
 			"Kubernetes (v1.19.16)",
 			"Kubernetes (v1.20.15)",
-			"Kubernetes (v1.21.12)",
-			"Kubernetes (v1.22.9)",
-			"Kubernetes (v1.23.6)",
-			"Kubernetes (v1.24.0)",
+			"Kubernetes (v1.21.14)",
+			"Kubernetes (v1.22.15)",
+			"Kubernetes (v1.23.12)",
+			"Kubernetes (v1.24.6)",
+			"Kubernetes (v1.25.2)",
 		)
 	}
 
