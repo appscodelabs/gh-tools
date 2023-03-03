@@ -18,7 +18,6 @@ package cmds
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -67,7 +66,7 @@ func runChangelog(sort string, exclude []string) {
 
 	releaseNotes := fmt.Sprintf("## Changelog\n\n%v\n", strings.Join(entries, "\n"))
 
-	err = ioutil.WriteFile(path, []byte(releaseNotes), 0o644)
+	err = os.WriteFile(path, []byte(releaseNotes), 0o644)
 	if err != nil {
 		log.Fatal(err)
 	}

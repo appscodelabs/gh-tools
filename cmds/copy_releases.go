@@ -21,7 +21,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -145,7 +144,7 @@ func copyRelease(src, dest string) {
 			}
 			_ = resp.Body.Close()
 
-			if err = ioutil.WriteFile(filepath.Join(dir, asset.GetName()), buf.Bytes(), 0o644); err != nil {
+			if err = os.WriteFile(filepath.Join(dir, asset.GetName()), buf.Bytes(), 0o644); err != nil {
 				log.Fatalln(err)
 			}
 

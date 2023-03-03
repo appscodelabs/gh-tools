@@ -18,7 +18,6 @@ package cmds
 
 import (
 	"context"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -80,7 +79,7 @@ func runRelease(owner, repo string, draft, prerelease bool) {
 		log.Fatal(err)
 	}
 
-	buff, err := ioutil.ReadFile("dist/CHANGELOG.md")
+	buff, err := os.ReadFile("dist/CHANGELOG.md")
 	if err != nil {
 		log.Fatal(err)
 	}
