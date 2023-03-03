@@ -20,7 +20,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -116,7 +115,7 @@ func runStarReport() {
 					if err == nil {
 						data, err := json.MarshalIndent(stargazers, "", "  ")
 						if err == nil {
-							err = ioutil.WriteFile(filepath.Join(dir, "stargazers.json"), data, 0o644)
+							err = os.WriteFile(filepath.Join(dir, "stargazers.json"), data, 0o644)
 							if err != nil {
 								log.Println(err)
 							}
@@ -130,7 +129,7 @@ func runStarReport() {
 					if err == nil {
 						data, err := json.MarshalIndent(watchers, "", "  ")
 						if err == nil {
-							err = ioutil.WriteFile(filepath.Join(dir, "watchers.json"), data, 0o644)
+							err = os.WriteFile(filepath.Join(dir, "watchers.json"), data, 0o644)
 							if err != nil {
 								log.Println(err)
 							}
