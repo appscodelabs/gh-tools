@@ -18,6 +18,7 @@ package cmds
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -27,6 +28,7 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 	"gomodules.xyz/flags"
+	"gomodules.xyz/pointer"
 	"gomodules.xyz/sets"
 )
 
@@ -76,11 +78,16 @@ func deletePackage(org, pkg, tag string) {
 }
 
 func deleteAllOrgPackages(ctx context.Context, client *github.Client, org string) {
-	pkgs, err := ListPackages(ctx, client, org)
+	pkgs1, err := ListPackages(ctx, client, org, "public")
 	if err != nil {
 		log.Fatalln(err)
 	}
-	for _, pkg := range pkgs {
+	pkgs2, err := ListPackages(ctx, client, org, "private")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	for _, pkg := range append(pkgs1, pkgs2...) {
+		fmt.Println("deleting package", pkg.GetName())
 		_, err = client.Organizations.DeletePackage(ctx, org, pkg.GetPackageType(), pkg.GetName())
 		if err != nil {
 			log.Fatal(err)
@@ -130,8 +137,11 @@ func deletePackageVersion(ctx context.Context, client *github.Client, org, pkg, 
 	}
 }
 
-func ListPackages(ctx context.Context, client *github.Client, owner string) ([]*github.Package, error) {
+func ListPackages(ctx context.Context, client *github.Client, owner, visibility string) ([]*github.Package, error) {
 	opt := &github.PackageListOptions{
+		PackageType: pointer.StringP("container"),
+		Visibility:  pointer.StringP(visibility),
+		State:       pointer.StringP("active"),
 		ListOptions: github.ListOptions{
 			PerPage: 100,
 		},
