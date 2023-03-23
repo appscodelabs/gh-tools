@@ -68,6 +68,27 @@ func deletePackage(org, pkg, tag string) {
 
 	client := github.NewClient(tc)
 
+	if pkg == "" {
+		deleteAllOrgPackages(ctx, client, org)
+	} else {
+		deletePackageVersion(ctx, client, org, pkg, tag)
+	}
+}
+
+func deleteAllOrgPackages(ctx context.Context, client *github.Client, org string) {
+	pkgs, err := ListPackages(ctx, client, org)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	for _, pkg := range pkgs {
+		_, err = client.Organizations.DeletePackage(ctx, org, pkg.GetPackageType(), pkg.GetName())
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func deletePackageVersion(ctx context.Context, client *github.Client, org, pkg, tag string) {
 	versions, err := ListPackageVersions(ctx, client, org, pkg)
 	if err != nil {
 		log.Fatalln(err)
@@ -107,6 +128,45 @@ func deletePackage(org, pkg, tag string) {
 			break
 		}
 	}
+}
+
+func ListPackages(ctx context.Context, client *github.Client, owner string) ([]*github.Package, error) {
+	opt := &github.PackageListOptions{
+		ListOptions: github.ListOptions{
+			PerPage: 100,
+		},
+	}
+
+	var result []*github.Package
+	for {
+		versions, resp, err := client.Organizations.ListPackages(ctx, owner, opt)
+		switch e := err.(type) {
+		case *github.RateLimitError:
+			time.Sleep(time.Until(e.Rate.Reset.Time.Add(skew)))
+			continue
+		case *github.AbuseRateLimitError:
+			time.Sleep(e.GetRetryAfter())
+			continue
+		case *github.ErrorResponse:
+			if e.Response.StatusCode == http.StatusNotFound {
+				log.Println(err)
+				break
+			} else {
+				return nil, err
+			}
+		default:
+			if e != nil {
+				return nil, err
+			}
+		}
+
+		result = append(result, versions...)
+		if resp.NextPage == 0 {
+			break
+		}
+		opt.Page = resp.NextPage
+	}
+	return result, nil
 }
 
 func ListPackageVersions(ctx context.Context, client *github.Client, owner, pkg string) ([]*github.PackageVersion, error) {
