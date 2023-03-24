@@ -400,7 +400,6 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 		(owner == "stashed" && repo == "catalog") {
 		p.RequiredStatusChecks.Contexts = append(
 			p.RequiredStatusChecks.Contexts,
-			"Kubernetes (v1.20.15)",
 			"Kubernetes (v1.21.14)",
 			"Kubernetes (v1.22.15)",
 			"Kubernetes (v1.23.13)",
@@ -412,7 +411,6 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 	if repo == "ui-wizards" {
 		p.RequiredStatusChecks.Contexts = append(
 			p.RequiredStatusChecks.Contexts,
-			"Kubernetes (v1.20.15)",
 			"Kubernetes (v1.21.14)",
 			"Kubernetes (v1.22.15)",
 			"Kubernetes (v1.23.13)",
@@ -424,7 +422,6 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 	if owner == "voyagermesh" {
 		p.RequiredStatusChecks.Contexts = append(
 			p.RequiredStatusChecks.Contexts,
-			"Kubernetes (v1.20.15)",
 			"Kubernetes (v1.21.14)",
 			"Kubernetes (v1.22.15)",
 			"Kubernetes (v1.23.13)",
