@@ -346,9 +346,9 @@ func ProtectRepo(ctx context.Context, client *github.Client, repo *github.Reposi
 	return nil
 }
 
-var requiredStatusChecks = map[string][]string{
-	"kubeform/gen-repo-refresher": {"DCO", "license/cla"},
-	"kubeguard/guard":             {"DCO", "Build"},
+var requiredStatusChecks = map[string][]*github.RequiredStatusCheck{
+	"kubeform/gen-repo-refresher": {{Context: "DCO"}, {Context: "license/cla"}},
+	"kubeguard/guard":             {{Context: "DCO"}, {Context: "Build"}},
 }
 
 func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, branch string, private bool) error {
@@ -362,9 +362,9 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 	p := &github.ProtectionRequest{
 		RequiredStatusChecks: &github.RequiredStatusChecks{
 			Strict: true,
-			Contexts: []string{
-				"Build",
-				"DCO",
+			Checks: []*github.RequiredStatusCheck{
+				{Context: "Build"},
+				{Context: "DCO"},
 			},
 		},
 		RequiredPullRequestReviews: &github.PullRequestReviewsEnforcementRequest{
@@ -390,60 +390,60 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 	}
 
 	if !private {
-		p.RequiredStatusChecks.Contexts = append(
-			p.RequiredStatusChecks.Contexts,
-			"license/cla",
+		p.RequiredStatusChecks.Checks = append(
+			p.RequiredStatusChecks.Checks,
+			&github.RequiredStatusCheck{Context: "license/cla"},
 		)
 	}
 
 	if repo == "installer" ||
 		(owner == "stashed" && repo == "catalog") {
-		p.RequiredStatusChecks.Contexts = append(
-			p.RequiredStatusChecks.Contexts,
-			"Kubernetes (v1.21.14)",
-			"Kubernetes (v1.22.15)",
-			"Kubernetes (v1.23.13)",
-			"Kubernetes (v1.24.7)",
-			"Kubernetes (v1.25.3)",
-			"Kubernetes (v1.26.0)",
+		p.RequiredStatusChecks.Checks = append(
+			p.RequiredStatusChecks.Checks,
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.21.14)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.22.15)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.23.13)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.24.7)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.25.3)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.26.0)"},
 		)
 	}
 	if repo == "ui-wizards" {
-		p.RequiredStatusChecks.Contexts = append(
-			p.RequiredStatusChecks.Contexts,
-			"Kubernetes (v1.21.14)",
-			"Kubernetes (v1.22.15)",
-			"Kubernetes (v1.23.13)",
-			"Kubernetes (v1.24.7)",
-			"Kubernetes (v1.25.3)",
-			"Kubernetes (v1.26.0)",
+		p.RequiredStatusChecks.Checks = append(
+			p.RequiredStatusChecks.Checks,
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.21.14)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.22.15)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.23.13)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.24.7)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.25.3)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.26.0)"},
 		)
 	}
 	if owner == "voyagermesh" {
-		p.RequiredStatusChecks.Contexts = append(
-			p.RequiredStatusChecks.Contexts,
-			"Kubernetes (v1.21.14)",
-			"Kubernetes (v1.22.15)",
-			"Kubernetes (v1.23.13)",
-			"Kubernetes (v1.24.7)",
-			"Kubernetes (v1.25.3)",
-			"Kubernetes (v1.26.0)",
+		p.RequiredStatusChecks.Checks = append(
+			p.RequiredStatusChecks.Checks,
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.21.14)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.22.15)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.23.13)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.24.7)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.25.3)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.26.0)"},
 		)
 	}
 
 	if strings.EqualFold(repo, "CHANGELOG") {
 		// Avoid dismissing stale reviews, since delay in kodiak auto approval can fail release process.
 		p.RequiredPullRequestReviews.DismissStaleReviews = false
-		p.RequiredStatusChecks.Contexts = []string{
-			"DCO",
+		p.RequiredStatusChecks.Checks = []*github.RequiredStatusCheck{
+			{Context: "DCO"},
 		}
 	}
 	//if branch == "master" {
 	//	p.Restrictions.Apps = []string{"kodiakhq"}
 	//}
 
-	if predefinedContexts, ok := requiredStatusChecks[fmt.Sprintf("%s/%s", owner, repo)]; ok {
-		p.RequiredStatusChecks.Contexts = predefinedContexts
+	if predefinedChecks, ok := requiredStatusChecks[fmt.Sprintf("%s/%s", owner, repo)]; ok {
+		p.RequiredStatusChecks.Checks = predefinedChecks
 	}
 
 	_, _, err := client.Repositories.UpdateBranchProtection(ctx, owner, repo, branch, p)
