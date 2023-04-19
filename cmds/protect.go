@@ -406,7 +406,7 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.24.12)"},
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.25.8)"},
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.26.3)"},
-			&github.RequiredStatusCheck{Context: "Kubernetes (v1.27.0)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.27.1)"},
 		)
 	}
 	if repo == "ui-wizards" {
@@ -418,7 +418,7 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.24.12)"},
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.25.8)"},
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.26.3)"},
-			&github.RequiredStatusCheck{Context: "Kubernetes (v1.27.0)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.27.1)"},
 		)
 	}
 	if owner == "voyagermesh" {
@@ -430,7 +430,7 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.24.12)"},
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.25.8)"},
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.26.3)"},
-			&github.RequiredStatusCheck{Context: "Kubernetes (v1.27.0)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.27.1)"},
 		)
 	}
 
