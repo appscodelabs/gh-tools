@@ -145,7 +145,7 @@ func runProtect() {
 			Affiliation: "owner,organization_member",
 			ListOptions: github.ListOptions{PerPage: 50},
 		}
-		repos, err := ListRepos(ctx, client, user.GetLogin(), opt, fork)
+		repos, err := ListRepos(ctx, client, opt, fork)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -238,10 +238,51 @@ func min(a, b int) int {
 	return b
 }
 
-func ListRepos(ctx context.Context, client *github.Client, user string, opt *github.RepositoryListOptions, fork bool) ([]*github.Repository, error) {
+func ListRepos(ctx context.Context, client *github.Client, opt *github.RepositoryListOptions, fork bool) ([]*github.Repository, error) {
 	var result []*github.Repository
 	for {
 		repos, resp, err := client.Repositories.List(ctx, "", opt)
+		switch e := err.(type) {
+		case *github.RateLimitError:
+			time.Sleep(time.Until(e.Rate.Reset.Time.Add(skew)))
+			continue
+		case *github.AbuseRateLimitError:
+			time.Sleep(e.GetRetryAfter())
+			continue
+		case *github.ErrorResponse:
+			if e.Response.StatusCode == http.StatusNotFound {
+				log.Println(err)
+				break
+			} else {
+				return nil, err
+			}
+		default:
+			if e != nil {
+				return nil, err
+			}
+		}
+
+		for idx := range repos {
+			if repos[idx].GetArchived() {
+				continue
+			}
+			if repos[idx].GetFork() && !fork {
+				continue
+			}
+			result = append(result, repos[idx])
+		}
+		if resp.NextPage == 0 {
+			break
+		}
+		opt.Page = resp.NextPage
+	}
+	return result, nil
+}
+
+func ListOrgRepos(ctx context.Context, client *github.Client, org string, opt *github.RepositoryListByOrgOptions, fork bool) ([]*github.Repository, error) {
+	var result []*github.Repository
+	for {
+		repos, resp, err := client.Repositories.ListByOrg(ctx, org, opt)
 		switch e := err.(type) {
 		case *github.RateLimitError:
 			time.Sleep(time.Until(e.Rate.Reset.Time.Add(skew)))

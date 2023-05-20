@@ -90,7 +90,7 @@ func addLabels() {
 			Affiliation: "owner,organization_member",
 			ListOptions: github.ListOptions{PerPage: 50},
 		}
-		repos, err := ListRepos(ctx, client, user.GetLogin(), opt, fork)
+		repos, err := ListRepos(ctx, client, opt, fork)
 		if err != nil {
 			log.Fatal(err)
 		}

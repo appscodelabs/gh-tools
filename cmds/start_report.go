@@ -90,7 +90,7 @@ func runStarReport() {
 			Affiliation: "owner,organization_member",
 			ListOptions: github.ListOptions{PerPage: 50},
 		}
-		repos, err := ListRepos(ctx, client, user.GetLogin(), opt, false)
+		repos, err := ListRepos(ctx, client, opt, false)
 		if err != nil {
 			log.Fatal(err)
 		}
