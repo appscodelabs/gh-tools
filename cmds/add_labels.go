@@ -22,7 +22,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/google/go-github/v52/github"
+	"github.com/google/go-github/v54/github"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 	"gomodules.xyz/flags"
