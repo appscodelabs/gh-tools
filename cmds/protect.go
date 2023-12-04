@@ -31,6 +31,7 @@ import (
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 	"gomodules.xyz/flags"
+	"gomodules.xyz/sets"
 )
 
 const (
@@ -46,6 +47,7 @@ var (
 	shardIndex = -1
 	shards     = -1
 	fork       bool
+	skipList   []string
 )
 
 func NewCmdProtect() *cobra.Command {
@@ -64,6 +66,7 @@ func NewCmdProtect() *cobra.Command {
 	cmd.Flags().IntVar(&shards, "shards", shards, "Total number of shards")
 	cmd.Flags().IntVar(&shardIndex, "shard-index", shardIndex, "Shard Index to be processed")
 	cmd.Flags().BoolVar(&fork, "fork", fork, "If true, return forked repos")
+	cmd.Flags().StringSliceVar(&skipList, "skip", skipList, "Skip owner/repository")
 	return cmd
 }
 
@@ -149,6 +152,7 @@ func runProtect() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		skipRepos := sets.NewString(skipList...)
 		log.Printf("Found %d repositories", len(repos))
 		for _, repo := range repos {
 			if repo.GetOwner().GetType() == OwnerTypeUser {
@@ -166,6 +170,10 @@ func runProtect() {
 				if freeOrgs[repo.GetOwner().GetLogin()] && repo.GetPrivate() {
 					continue
 				}
+				if skipRepos.Has(repo.GetFullName()) {
+					continue
+				}
+
 				err = ProtectRepo(ctx, client, repo)
 				if err != nil {
 					log.Fatalln(err)
