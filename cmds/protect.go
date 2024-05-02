@@ -27,7 +27,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-github/v54/github"
+	"github.com/google/go-github/v61/github"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 	"gomodules.xyz/flags"
@@ -411,7 +411,7 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 	p := &github.ProtectionRequest{
 		RequiredStatusChecks: &github.RequiredStatusChecks{
 			Strict: true,
-			Checks: []*github.RequiredStatusCheck{
+			Checks: &[]*github.RequiredStatusCheck{
 				{Context: "Build"},
 				{Context: "DCO"},
 			},
@@ -432,23 +432,24 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			// Apps:  []string{"kodiakhq"},
 		},
 	}
-	if owner == "bytebuilders" || owner == "kubedb" || owner == "kubestash" {
+	if owner == "appscode-cloud" || owner == "kubedb" || owner == "kubestash" {
 		p.Restrictions.Apps = []string{"kodiak-appscode"}
 	} else {
 		p.Restrictions.Apps = []string{"kodiakhq"}
 	}
 
 	if !private {
-		p.RequiredStatusChecks.Checks = append(
-			p.RequiredStatusChecks.Checks,
+		checks := append(
+			*p.RequiredStatusChecks.Checks,
 			&github.RequiredStatusCheck{Context: "license/cla"},
 		)
+		p.RequiredStatusChecks.Checks = &checks
 	}
 
 	if repo == "installer" ||
 		(owner == "stashed" && repo == "catalog") {
-		p.RequiredStatusChecks.Checks = append(
-			p.RequiredStatusChecks.Checks,
+		checks := append(
+			*p.RequiredStatusChecks.Checks,
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.21.14)"},
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.22.17)"},
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.23.17)"},
@@ -457,10 +458,11 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.26.3)"},
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.27.1)"},
 		)
+		p.RequiredStatusChecks.Checks = &checks
 	}
 	if repo == "ui-wizards" {
-		p.RequiredStatusChecks.Checks = append(
-			p.RequiredStatusChecks.Checks,
+		checks := append(
+			*p.RequiredStatusChecks.Checks,
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.21.14)"},
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.22.17)"},
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.23.17)"},
@@ -469,10 +471,11 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.26.3)"},
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.27.1)"},
 		)
+		p.RequiredStatusChecks.Checks = &checks
 	}
 	if owner == "voyagermesh" {
-		p.RequiredStatusChecks.Checks = append(
-			p.RequiredStatusChecks.Checks,
+		checks := append(
+			*p.RequiredStatusChecks.Checks,
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.21.14)"},
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.22.17)"},
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.23.17)"},
@@ -481,12 +484,13 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.26.3)"},
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.27.1)"},
 		)
+		p.RequiredStatusChecks.Checks = &checks
 	}
 
 	if strings.EqualFold(repo, "CHANGELOG") {
 		// Avoid dismissing stale reviews, since delay in kodiak auto approval can fail release process.
 		p.RequiredPullRequestReviews.DismissStaleReviews = false
-		p.RequiredStatusChecks.Checks = []*github.RequiredStatusCheck{
+		p.RequiredStatusChecks.Checks = &[]*github.RequiredStatusCheck{
 			{Context: "DCO"},
 		}
 	}
@@ -495,7 +499,7 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 	//}
 
 	if predefinedChecks, ok := requiredStatusChecks[fmt.Sprintf("%s/%s", owner, repo)]; ok {
-		p.RequiredStatusChecks.Checks = predefinedChecks
+		p.RequiredStatusChecks.Checks = &predefinedChecks
 	}
 
 	_, _, err := client.Repositories.UpdateBranchProtection(ctx, owner, repo, branch, p)
