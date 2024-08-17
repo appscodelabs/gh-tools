@@ -86,7 +86,7 @@ func runStarReport() {
 	}
 
 	{
-		opt := &github.RepositoryListOptions{
+		opt := &github.RepositoryListByAuthenticatedUserOptions{
 			Affiliation: "owner,organization_member",
 			ListOptions: github.ListOptions{PerPage: 50},
 		}
