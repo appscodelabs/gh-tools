@@ -84,7 +84,7 @@ func printRepoList(orgs sets.String, orgOwned, fork, ssh bool) {
 			}
 		}
 	} else {
-		opt := &github.RepositoryListOptions{
+		opt := &github.RepositoryListByAuthenticatedUserOptions{
 			Affiliation: "owner,organization_member",
 			ListOptions: github.ListOptions{PerPage: 50},
 		}

@@ -144,7 +144,7 @@ func runProtect() {
 	}
 
 	{
-		opt := &github.RepositoryListOptions{
+		opt := &github.RepositoryListByAuthenticatedUserOptions{
 			Affiliation: "owner,organization_member",
 			ListOptions: github.ListOptions{PerPage: 50},
 		}
@@ -246,10 +246,10 @@ func min(a, b int) int {
 	return b
 }
 
-func ListRepos(ctx context.Context, client *github.Client, opt *github.RepositoryListOptions, fork bool) ([]*github.Repository, error) {
+func ListRepos(ctx context.Context, client *github.Client, opt *github.RepositoryListByAuthenticatedUserOptions, fork bool) ([]*github.Repository, error) {
 	var result []*github.Repository
 	for {
-		repos, resp, err := client.Repositories.List(ctx, "", opt)
+		repos, resp, err := client.Repositories.ListByAuthenticatedUser(ctx, opt)
 		switch e := err.(type) {
 		case *github.RateLimitError:
 			time.Sleep(time.Until(e.Rate.Reset.Time.Add(skew)))
