@@ -24,7 +24,7 @@ import (
 
 	"github.com/appscodelabs/gh-tools/internal/git"
 
-	"github.com/google/go-github/v61/github"
+	"github.com/google/go-github/v69/github"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 	"gomodules.xyz/flags"
@@ -128,7 +128,6 @@ func runRelease(owner, repo string, draft, prerelease bool) {
 				},
 				file,
 			)
-
 			if err != nil {
 				log.Fatal(err)
 			}
