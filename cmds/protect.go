@@ -453,7 +453,7 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.28.15)"},
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.30.13)"},
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.32.5)"},
-			&github.RequiredStatusCheck{Context: "Kubernetes (v1.33.1)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.33.2)"},
 		)
 		p.RequiredStatusChecks.Checks = &checks
 	}
@@ -463,7 +463,7 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.28.15)"},
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.30.13)"},
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.32.5)"},
-			&github.RequiredStatusCheck{Context: "Kubernetes (v1.33.1)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.33.2)"},
 		)
 		p.RequiredStatusChecks.Checks = &checks
 	}
@@ -473,7 +473,7 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.28.15)"},
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.30.13)"},
 			&github.RequiredStatusCheck{Context: "Kubernetes (v1.32.5)"},
-			&github.RequiredStatusCheck{Context: "Kubernetes (v1.33.1)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.33.2)"},
 		)
 		p.RequiredStatusChecks.Checks = &checks
 	}
