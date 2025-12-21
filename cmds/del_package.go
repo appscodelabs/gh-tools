@@ -18,13 +18,14 @@ package cmds
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"time"
 
-	"github.com/google/go-github/v69/github"
+	"github.com/google/go-github/v80/github"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 	"gomodules.xyz/flags"
@@ -123,10 +124,14 @@ func deletePackageVersion(ctx context.Context, client *github.Client, org, pkg, 
 	*/
 	for _, ver := range versions {
 		tags := sets.NewString()
-		if ver.Metadata != nil &&
-			ver.Metadata.Container != nil {
-			tags.Insert(ver.Metadata.Container.Tags...)
+		if ver.Metadata != nil {
+			var md github.PackageMetadata
+			if err := json.Unmarshal(ver.Metadata, &md); err == nil && md.Container != nil {
+				tags.Insert(md.Container.Tags...)
+			}
 		}
+
+		// PackageMetadata
 		if tags.Has(tag) {
 			_, err = client.Organizations.PackageDeleteVersion(ctx, org, "container", pkg, ver.GetID())
 			if err != nil {
@@ -152,7 +157,7 @@ func ListPackages(ctx context.Context, client *github.Client, owner, visibility 
 		versions, resp, err := client.Organizations.ListPackages(ctx, owner, opt)
 		switch e := err.(type) {
 		case *github.RateLimitError:
-			time.Sleep(time.Until(e.Rate.Reset.Time.Add(skew)))
+			time.Sleep(time.Until(e.Rate.Reset.Add(skew)))
 			continue
 		case *github.AbuseRateLimitError:
 			time.Sleep(e.GetRetryAfter())
@@ -191,7 +196,7 @@ func ListPackageVersions(ctx context.Context, client *github.Client, owner, pkg 
 		versions, resp, err := client.Organizations.PackageGetAllVersions(ctx, owner, "container", pkg, opt)
 		switch e := err.(type) {
 		case *github.RateLimitError:
-			time.Sleep(time.Until(e.Rate.Reset.Time.Add(skew)))
+			time.Sleep(time.Until(e.Rate.Reset.Add(skew)))
 			continue
 		case *github.AbuseRateLimitError:
 			time.Sleep(e.GetRetryAfter())

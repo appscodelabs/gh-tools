@@ -28,7 +28,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-github/v69/github"
+	"github.com/google/go-github/v80/github"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 	"gomodules.xyz/flags"
@@ -182,7 +182,7 @@ func ListReleases(ctx context.Context, client *github.Client, owner, repo string
 		branch, resp, err := client.Repositories.ListReleases(ctx, owner, repo, opt)
 		switch e := err.(type) {
 		case *github.RateLimitError:
-			time.Sleep(time.Until(e.Rate.Reset.Time.Add(skew)))
+			time.Sleep(time.Until(e.Rate.Reset.Add(skew)))
 			continue
 		case *github.AbuseRateLimitError:
 			time.Sleep(e.GetRetryAfter())

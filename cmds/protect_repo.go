@@ -23,7 +23,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/google/go-github/v69/github"
+	"github.com/google/go-github/v80/github"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 	"gomodules.xyz/flags"
@@ -82,7 +82,7 @@ func GetRepo(ctx context.Context, client *github.Client, owner, repo string) (*g
 		repo, _, err := client.Repositories.Get(ctx, owner, repo)
 		switch e := err.(type) {
 		case *github.RateLimitError:
-			time.Sleep(time.Until(e.Rate.Reset.Time.Add(skew)))
+			time.Sleep(time.Until(e.Rate.Reset.Add(skew)))
 			continue
 		case *github.AbuseRateLimitError:
 			time.Sleep(e.GetRetryAfter())

@@ -27,7 +27,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-github/v69/github"
+	"github.com/google/go-github/v80/github"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 	"gomodules.xyz/flags"
@@ -198,7 +198,7 @@ func ListOrgs(ctx context.Context, client *github.Client, opt *github.ListOption
 		orgs, resp, err := client.Organizations.List(ctx, "", opt)
 		switch e := err.(type) {
 		case *github.RateLimitError:
-			time.Sleep(time.Until(e.Rate.Reset.Time.Add(skew)))
+			time.Sleep(time.Until(e.Rate.Reset.Add(skew)))
 			continue
 		case *github.AbuseRateLimitError:
 			time.Sleep(e.GetRetryAfter())
@@ -252,7 +252,7 @@ func ListRepos(ctx context.Context, client *github.Client, opt *github.Repositor
 		repos, resp, err := client.Repositories.ListByAuthenticatedUser(ctx, opt)
 		switch e := err.(type) {
 		case *github.RateLimitError:
-			time.Sleep(time.Until(e.Rate.Reset.Time.Add(skew)))
+			time.Sleep(time.Until(e.Rate.Reset.Add(skew)))
 			continue
 		case *github.AbuseRateLimitError:
 			time.Sleep(e.GetRetryAfter())
@@ -293,7 +293,7 @@ func ListOrgRepos(ctx context.Context, client *github.Client, org string, opt *g
 		repos, resp, err := client.Repositories.ListByOrg(ctx, org, opt)
 		switch e := err.(type) {
 		case *github.RateLimitError:
-			time.Sleep(time.Until(e.Rate.Reset.Time.Add(skew)))
+			time.Sleep(time.Until(e.Rate.Reset.Add(skew)))
 			continue
 		case *github.AbuseRateLimitError:
 			time.Sleep(e.GetRetryAfter())
@@ -340,7 +340,7 @@ func ListBranches(ctx context.Context, client *github.Client, repo *github.Repos
 		branch, resp, err := client.Repositories.ListBranches(ctx, repo.Owner.GetLogin(), repo.GetName(), opt)
 		switch e := err.(type) {
 		case *github.RateLimitError:
-			time.Sleep(time.Until(e.Rate.Reset.Time.Add(skew)))
+			time.Sleep(time.Until(e.Rate.Reset.Add(skew)))
 			continue
 		case *github.AbuseRateLimitError:
 			time.Sleep(e.GetRetryAfter())
@@ -380,7 +380,7 @@ func ProtectRepo(ctx context.Context, client *github.Client, repo *github.Reposi
 			if err := ProtectBranch(ctx, client, repo.Owner.GetLogin(), repo.GetName(), branch.GetName(), repo.GetPrivate()); err != nil {
 				switch e := err.(type) {
 				case *github.RateLimitError:
-					time.Sleep(time.Until(e.Rate.Reset.Time.Add(skew)))
+					time.Sleep(time.Until(e.Rate.Reset.Add(skew)))
 					continue
 				case *github.AbuseRateLimitError:
 					time.Sleep(e.GetRetryAfter())
@@ -504,7 +504,7 @@ func TeamMaintainsRepo(ctx context.Context, client *github.Client, org, team, re
 		})
 		switch e := err.(type) {
 		case *github.RateLimitError:
-			time.Sleep(time.Until(e.Rate.Reset.Time.Add(skew)))
+			time.Sleep(time.Until(e.Rate.Reset.Add(skew)))
 			continue
 		case *github.AbuseRateLimitError:
 			time.Sleep(e.GetRetryAfter())
@@ -531,7 +531,7 @@ GET_TEAM:
 		t, _, err := client.Teams.GetTeamBySlug(ctx, org, team)
 		switch e := err.(type) {
 		case *github.RateLimitError:
-			time.Sleep(time.Until(e.Rate.Reset.Time.Add(skew)))
+			time.Sleep(time.Until(e.Rate.Reset.Add(skew)))
 			continue
 		case *github.AbuseRateLimitError:
 			time.Sleep(e.GetRetryAfter())
@@ -563,7 +563,7 @@ GET_TEAM:
 		})
 		switch e := err.(type) {
 		case *github.RateLimitError:
-			time.Sleep(time.Until(e.Rate.Reset.Time.Add(skew)))
+			time.Sleep(time.Until(e.Rate.Reset.Add(skew)))
 			continue
 		case *github.AbuseRateLimitError:
 			time.Sleep(e.GetRetryAfter())

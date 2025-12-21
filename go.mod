@@ -1,12 +1,12 @@
 module github.com/appscodelabs/gh-tools
 
-go 1.23.0
+go 1.24.0
 
 toolchain go1.24.4
 
 require (
 	github.com/apex/log v1.9.0
-	github.com/google/go-github/v69 v69.1.0
+	github.com/google/go-github/v80 v80.0.0
 	github.com/spf13/cobra v1.8.0
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/oauth2 v0.27.0
