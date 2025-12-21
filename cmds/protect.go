@@ -425,7 +425,7 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			RequireCodeOwnerReviews:      false,
 			RequiredApprovingReviewCount: 1,
 		},
-		// EnforceAdmins: true,
+		EnforceAdmins: true,
 		Restrictions: &github.BranchRestrictionsRequest{
 			Users: make([]string, 1),
 			Teams: make([]string, 1),
@@ -450,30 +450,30 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 		(owner == "stashed" && repo == "catalog") {
 		checks := append(
 			*p.RequiredStatusChecks.Checks,
-			&github.RequiredStatusCheck{Context: "Kubernetes (v1.28.15)"},
-			&github.RequiredStatusCheck{Context: "Kubernetes (v1.30.13)"},
-			&github.RequiredStatusCheck{Context: "Kubernetes (v1.32.5)"},
-			&github.RequiredStatusCheck{Context: "Kubernetes (v1.34.0)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.29.14)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.31.14)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.33.7)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.35.0)"},
 		)
 		p.RequiredStatusChecks.Checks = &checks
 	}
 	if repo == "ui-wizards" {
 		checks := append(
 			*p.RequiredStatusChecks.Checks,
-			&github.RequiredStatusCheck{Context: "Kubernetes (v1.28.15)"},
-			&github.RequiredStatusCheck{Context: "Kubernetes (v1.30.13)"},
-			&github.RequiredStatusCheck{Context: "Kubernetes (v1.32.5)"},
-			&github.RequiredStatusCheck{Context: "Kubernetes (v1.34.0)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.29.14)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.31.14)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.33.7)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.35.0)"},
 		)
 		p.RequiredStatusChecks.Checks = &checks
 	}
 	if owner == "voyagermesh" {
 		checks := append(
 			*p.RequiredStatusChecks.Checks,
-			&github.RequiredStatusCheck{Context: "Kubernetes (v1.28.15)"},
-			&github.RequiredStatusCheck{Context: "Kubernetes (v1.30.13)"},
-			&github.RequiredStatusCheck{Context: "Kubernetes (v1.32.5)"},
-			&github.RequiredStatusCheck{Context: "Kubernetes (v1.34.0)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.29.14)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.31.14)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.33.7)"},
+			&github.RequiredStatusCheck{Context: "Kubernetes (v1.35.0)"},
 		)
 		p.RequiredStatusChecks.Checks = &checks
 	}
