@@ -34,6 +34,7 @@ func NewRootCmd(version string) *cobra.Command {
 	_ = flag.CommandLine.Parse([]string{})
 
 	cmd.AddCommand(NewCmdProtect())
+	cmd.AddCommand(NewCmdDependabot())
 	cmd.AddCommand(NewCmdProtectRepo())
 	cmd.AddCommand(NewCmdStarReport())
 	cmd.AddCommand(NewCmdListOrgs())
