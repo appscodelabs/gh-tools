@@ -438,13 +438,13 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 		p.Restrictions.Apps = []string{"kodiakhq"}
 	}
 
-	if !private {
-		checks := append(
-			*p.RequiredStatusChecks.Checks,
-			&github.RequiredStatusCheck{Context: "license/cla"},
-		)
-		p.RequiredStatusChecks.Checks = &checks
-	}
+	// if !private {
+	// 	checks := append(
+	// 		*p.RequiredStatusChecks.Checks,
+	// 		&github.RequiredStatusCheck{Context: "license/cla"},
+	// 	)
+	// 	p.RequiredStatusChecks.Checks = &checks
+	// }
 
 	if repo == "installer" ||
 		(owner == "stashed" && repo == "catalog") {
