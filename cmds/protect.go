@@ -425,7 +425,8 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			RequireCodeOwnerReviews:      false,
 			RequiredApprovingReviewCount: 1,
 		},
-		EnforceAdmins: (branch == "master" || branch == "main") && (repo != "docs" && repo != "website"),
+		EnforceAdmins: (repo != "docs" && repo != "website" && repo != "govanityurls") &&
+			(branch == "master" || branch == "main"),
 		Restrictions: &github.BranchRestrictionsRequest{
 			Users: make([]string, 1),
 			Teams: make([]string, 1),
