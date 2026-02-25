@@ -27,7 +27,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-github/v81/github"
+	"github.com/google/go-github/v83/github"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 	"gomodules.xyz/flags"
@@ -158,7 +158,7 @@ func runProtect() {
 			if repo.GetOwner().GetType() == OwnerTypeUser {
 				continue // don't protect personal repos
 			}
-			if repo.GetPermissions()["admin"] {
+			if repo.GetPermissions().GetAdmin() {
 				// for appscode org, add repos by hand to team
 				if repo.GetOwner().GetLogin() != "appscode" {
 					err = TeamMaintainsRepo(ctx, client, repo.GetOwner().GetLogin(), teamReviewers, repo.GetName())

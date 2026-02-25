@@ -26,7 +26,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/google/go-github/v81/github"
+	"github.com/google/go-github/v83/github"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 	"gomodules.xyz/flags"
@@ -101,7 +101,7 @@ func runStarReport() {
 				continue
 			}
 
-			if repo.GetPermissions()["admin"] {
+			if repo.GetPermissions().GetAdmin() {
 				dir := filepath.Join(dirStarReport, repo.Owner.GetLogin(), repo.GetName())
 				err = os.MkdirAll(dir, 0o755)
 				if err != nil {

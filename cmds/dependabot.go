@@ -23,7 +23,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/google/go-github/v81/github"
+	"github.com/google/go-github/v83/github"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 	"gomodules.xyz/flags"
@@ -109,7 +109,7 @@ func addDependabot() {
 			//if repo.GetPrivate() {
 			//	continue
 			//}
-			if repo.GetPermissions()["admin"] {
+			if repo.GetPermissions().GetAdmin() {
 				err = processDependabot(ctx, client, repo)
 				if err != nil {
 					log.Fatalln(err)
