@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"slices"
 	"sort"
 
 	"github.com/google/go-github/v83/github"
@@ -82,7 +83,7 @@ func runStopWatch() {
 		}
 		log.Printf("Found %d orgs", len(repos))
 		for _, repo := range repos {
-			if in(orgsToWatchRepos, repo.GetOwner().GetLogin()) {
+			if slices.Contains(orgsToWatchRepos, repo.GetOwner().GetLogin()) {
 				fmt.Printf("[UPDATE] Stopping to watch %s/%s\n", repo.Owner.GetLogin(), repo.GetName())
 
 				_, err := client.Activity.DeleteRepositorySubscription(ctx, repo.Owner.GetLogin(), repo.GetName())
@@ -109,13 +110,4 @@ func ListWatchedRepos(ctx context.Context, client *github.Client, opt *github.Li
 	}
 	sort.Slice(result, func(i, j int) bool { return result[i].GetFullName() < result[j].GetFullName() })
 	return result, nil
-}
-
-func in(a []string, s string) bool {
-	for _, b := range a {
-		if b == s {
-			return true
-		}
-	}
-	return false
 }

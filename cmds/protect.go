@@ -23,6 +23,7 @@ import (
 	"math"
 	"net/http"
 	"os"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -239,13 +240,6 @@ func ShardOrgs(in []*github.Organization, shardIndex, shards int) []*github.Orga
 	return in[start:end]
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 func ListRepos(ctx context.Context, client *github.Client, opt *github.RepositoryListByAuthenticatedUserOptions, fork bool) ([]*github.Repository, error) {
 	var result []*github.Repository
 	for {
@@ -425,14 +419,16 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			RequireCodeOwnerReviews:      false,
 			RequiredApprovingReviewCount: 1,
 		},
-		EnforceAdmins: (repo != "docs" && repo != "website" && repo != "govanityurls") &&
-			(branch == "master" || branch == "main"),
+		EnforceAdmins: !slices.Contains([]string{"docs", "website", "govanityurls"}, repo) &&
+			!slices.Contains([]string{"ops-center/grafana-dashboards"}, fmt.Sprintf("%s/%s", owner, repo)) &&
+			slices.Contains([]string{"master", "main"}, branch),
 		Restrictions: &github.BranchRestrictionsRequest{
 			Users: make([]string, 1),
 			Teams: make([]string, 1),
 			// Apps:  []string{"kodiakhq"},
 		},
 	}
+
 	if owner == "appscode-cloud" || owner == "kubedb" || owner == "kubestash" {
 		p.Restrictions.Apps = []string{"kodiak-appscode"}
 	} else {
