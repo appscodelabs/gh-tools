@@ -23,7 +23,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/google/go-github/v81/github"
+	"github.com/google/go-github/v83/github"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 	"gomodules.xyz/flags"
@@ -119,7 +119,7 @@ func runProtectOrg(org string, includeForks bool, skipList []string) {
 	log.Printf("Found %d repositories in org %s", len(repos), org)
 
 	for _, repo := range repos {
-		if !repo.GetPermissions()["admin"] {
+		if !repo.GetPermissions().GetAdmin() {
 			log.Printf("Skipping %s (no admin permission)", repo.GetFullName())
 			continue
 		}

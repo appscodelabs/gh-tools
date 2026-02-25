@@ -23,7 +23,7 @@ import (
 	"os"
 	"sort"
 
-	"github.com/google/go-github/v81/github"
+	"github.com/google/go-github/v83/github"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 	"gomodules.xyz/sets"
@@ -97,7 +97,7 @@ func printRepoList(orgs sets.String, orgOwned, fork, ssh bool) {
 			if repo.GetOwner().GetType() == OwnerTypeUser {
 				continue // don't protect personal repos
 			}
-			if repo.GetPermissions()["admin"] && (orgs.Len() == 0 || orgs.Has(repo.GetOwner().GetLogin())) {
+			if repo.GetPermissions().GetAdmin() && (orgs.Len() == 0 || orgs.Has(repo.GetOwner().GetLogin())) {
 				if ssh {
 					listing = append(listing, fmt.Sprintf("git clone git@github.com:%s/%s.git", repo.GetOwner().GetLogin(), repo.GetName()))
 				} else {
