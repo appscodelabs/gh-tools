@@ -26,11 +26,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/google/go-github/v84/github"
 	"github.com/spf13/cobra"
-	"golang.org/x/oauth2"
 	"gomodules.xyz/flags"
 )
 
@@ -68,17 +66,9 @@ func copyRelease(src, dest string) {
 	}
 	destOwner, destRepo := parts[0], parts[1]
 
-	token, found := os.LookupEnv("GH_TOOLS_TOKEN")
-	if !found {
-		log.Fatalln("GH_TOOLS_TOKEN env var is not set")
-	}
-
 	// github client
 	ctx := context.Background()
-	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
-	tc := oauth2.NewClient(ctx, ts)
-
-	client := github.NewClient(tc)
+	client := newGitHubClient(ctx)
 
 	var buf bytes.Buffer
 
@@ -180,24 +170,12 @@ func ListReleases(ctx context.Context, client *github.Client, owner, repo string
 	var result []*github.RepositoryRelease
 	for {
 		branch, resp, err := client.Repositories.ListReleases(ctx, owner, repo, opt)
-		switch e := err.(type) {
-		case *github.RateLimitError:
-			time.Sleep(time.Until(e.Rate.Reset.Add(skew)))
-			continue
-		case *github.AbuseRateLimitError:
-			time.Sleep(e.GetRetryAfter())
-			continue
-		case *github.ErrorResponse:
-			if e.Response.StatusCode == http.StatusNotFound {
+		if err != nil {
+			if e, ok := err.(*github.ErrorResponse); ok && e.Response.StatusCode == http.StatusNotFound {
 				log.Println(err)
 				break
-			} else {
-				return nil, err
 			}
-		default:
-			if e != nil {
-				return nil, err
-			}
+			return nil, err
 		}
 
 		result = append(result, branch...)

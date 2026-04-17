@@ -20,12 +20,10 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"sort"
 
 	"github.com/google/go-github/v84/github"
 	"github.com/spf13/cobra"
-	"golang.org/x/oauth2"
 	"gomodules.xyz/sets"
 )
 
@@ -49,20 +47,8 @@ func NewCmdListRepos() *cobra.Command {
 }
 
 func printRepoList(orgs sets.String, orgOwned, fork, ssh bool) {
-	token, found := os.LookupEnv("GH_TOOLS_TOKEN")
-	if !found {
-		log.Fatalln("GH_TOOLS_TOKEN env var is not set")
-	}
-
 	ctx := context.Background()
-
-	// Create the http client.
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: token},
-	)
-	tc := oauth2.NewClient(ctx, ts)
-
-	client := github.NewClient(tc)
+	client := newGitHubClient(ctx)
 
 	var listing []string
 	if orgOwned {

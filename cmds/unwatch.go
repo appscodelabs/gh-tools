@@ -26,7 +26,6 @@ import (
 
 	"github.com/google/go-github/v84/github"
 	"github.com/spf13/cobra"
-	"golang.org/x/oauth2"
 	"gomodules.xyz/flags"
 )
 
@@ -49,24 +48,12 @@ func NewCmdStopWatch() *cobra.Command {
 }
 
 func runStopWatch() {
-	token, found := os.LookupEnv("GH_TOOLS_TOKEN")
-	if !found {
-		log.Fatalln("GH_TOOLS_TOKEN env var is not set")
-	}
-
 	if len(orgsToWatchRepos) == 0 {
 		os.Exit(0)
 	}
 
 	ctx := context.Background()
-
-	// Create the http client.
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: token},
-	)
-	tc := oauth2.NewClient(ctx, ts)
-
-	client := github.NewClient(tc)
+	client := newGitHubClient(ctx)
 
 	// Get the current user
 	user, _, err := client.Users.Get(ctx, "")

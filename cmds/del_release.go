@@ -20,12 +20,9 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"os"
 	"strings"
 
-	"github.com/google/go-github/v84/github"
 	"github.com/spf13/cobra"
-	"golang.org/x/oauth2"
 	"gomodules.xyz/flags"
 )
 
@@ -56,17 +53,9 @@ func deleteRelease(src string) {
 	}
 	srcOwner, srcRepo := parts[0], parts[1]
 
-	token, found := os.LookupEnv("GH_TOOLS_TOKEN")
-	if !found {
-		log.Fatalln("GH_TOOLS_TOKEN env var is not set")
-	}
-
 	// github client
 	ctx := context.Background()
-	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
-	tc := oauth2.NewClient(ctx, ts)
-
-	client := github.NewClient(tc)
+	client := newGitHubClient(ctx)
 
 	srcReleases, err := ListReleases(ctx, client, srcOwner, srcRepo)
 	if err != nil {
