@@ -20,12 +20,9 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"os"
-	"time"
 
 	"github.com/google/go-github/v84/github"
 	"github.com/spf13/cobra"
-	"golang.org/x/oauth2"
 	"gomodules.xyz/flags"
 )
 
@@ -51,20 +48,8 @@ func NewCmdProtectRepo() *cobra.Command {
 }
 
 func runProtectRepo(owner, repo string) {
-	token, found := os.LookupEnv("GH_TOOLS_TOKEN")
-	if !found {
-		log.Fatalln("GH_TOOLS_TOKEN env var is not set")
-	}
-
 	ctx := context.Background()
-
-	// Create the http client.
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: token},
-	)
-	tc := oauth2.NewClient(ctx, ts)
-
-	client := github.NewClient(tc)
+	client := newGitHubClient(ctx)
 
 	r, err := GetRepo(ctx, client, owner, repo)
 	if err != nil {
@@ -78,28 +63,13 @@ func runProtectRepo(owner, repo string) {
 }
 
 func GetRepo(ctx context.Context, client *github.Client, owner, repo string) (*github.Repository, error) {
-	for {
-		repo, _, err := client.Repositories.Get(ctx, owner, repo)
-		switch e := err.(type) {
-		case *github.RateLimitError:
-			time.Sleep(time.Until(e.Rate.Reset.Add(skew)))
-			continue
-		case *github.AbuseRateLimitError:
-			time.Sleep(e.GetRetryAfter())
-			continue
-		case *github.ErrorResponse:
-			if e.Response.StatusCode == http.StatusNotFound {
-				log.Println(err)
-				break
-			} else {
-				return nil, err
-			}
-		default:
-			if e != nil {
-				return nil, err
-			}
+	r, _, err := client.Repositories.Get(ctx, owner, repo)
+	if err != nil {
+		if e, ok := err.(*github.ErrorResponse); ok && e.Response.StatusCode == http.StatusNotFound {
+			log.Println(err)
+			return nil, nil
 		}
-
-		return repo, nil
+		return nil, err
 	}
+	return r, nil
 }

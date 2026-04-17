@@ -26,7 +26,6 @@ import (
 
 	"github.com/google/go-github/v84/github"
 	"github.com/spf13/cobra"
-	"golang.org/x/oauth2"
 	"gomodules.xyz/flags"
 )
 
@@ -62,17 +61,9 @@ func runRelease(owner, repo string, draft, prerelease bool) {
 		log.Fatal("Repository name can't be empty")
 	}
 
-	token, found := os.LookupEnv("GH_TOOLS_TOKEN")
-	if !found {
-		log.Fatalln("GH_TOOLS_TOKEN env var is not set")
-	}
-
 	// github client
 	ctx := context.Background()
-	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
-	tc := oauth2.NewClient(ctx, ts)
-
-	client := github.NewClient(tc)
+	client := newGitHubClient(ctx)
 
 	tag, err := git.Clean(git.Run("tag", "-l", "--points-at", "HEAD"))
 	if err != nil {

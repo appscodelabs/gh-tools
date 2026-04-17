@@ -22,12 +22,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
-	"time"
 
 	"github.com/google/go-github/v84/github"
 	"github.com/spf13/cobra"
-	"golang.org/x/oauth2"
 	"gomodules.xyz/flags"
 	"gomodules.xyz/pointer"
 	"gomodules.xyz/sets"
@@ -59,17 +56,9 @@ func NewCmdDeletePackage() *cobra.Command {
 }
 
 func deletePackage(org, pkg, tag string) {
-	token, found := os.LookupEnv("GH_TOOLS_TOKEN")
-	if !found {
-		log.Fatalln("GH_TOOLS_TOKEN env var is not set")
-	}
-
 	// github client
 	ctx := context.Background()
-	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
-	tc := oauth2.NewClient(ctx, ts)
-
-	client := github.NewClient(tc)
+	client := newGitHubClient(ctx)
 
 	if pkg == "" {
 		deleteAllOrgPackages(ctx, client, org)
@@ -155,24 +144,12 @@ func ListPackages(ctx context.Context, client *github.Client, owner, visibility 
 	var result []*github.Package
 	for {
 		versions, resp, err := client.Organizations.ListPackages(ctx, owner, opt)
-		switch e := err.(type) {
-		case *github.RateLimitError:
-			time.Sleep(time.Until(e.Rate.Reset.Add(skew)))
-			continue
-		case *github.AbuseRateLimitError:
-			time.Sleep(e.GetRetryAfter())
-			continue
-		case *github.ErrorResponse:
-			if e.Response.StatusCode == http.StatusNotFound {
+		if err != nil {
+			if e, ok := err.(*github.ErrorResponse); ok && e.Response.StatusCode == http.StatusNotFound {
 				log.Println(err)
 				break
-			} else {
-				return nil, err
 			}
-		default:
-			if e != nil {
-				return nil, err
-			}
+			return nil, err
 		}
 
 		result = append(result, versions...)
@@ -194,24 +171,12 @@ func ListPackageVersions(ctx context.Context, client *github.Client, owner, pkg 
 	var result []*github.PackageVersion
 	for {
 		versions, resp, err := client.Organizations.PackageGetAllVersions(ctx, owner, "container", pkg, opt)
-		switch e := err.(type) {
-		case *github.RateLimitError:
-			time.Sleep(time.Until(e.Rate.Reset.Add(skew)))
-			continue
-		case *github.AbuseRateLimitError:
-			time.Sleep(e.GetRetryAfter())
-			continue
-		case *github.ErrorResponse:
-			if e.Response.StatusCode == http.StatusNotFound {
+		if err != nil {
+			if e, ok := err.(*github.ErrorResponse); ok && e.Response.StatusCode == http.StatusNotFound {
 				log.Println(err)
 				break
-			} else {
-				return nil, err
 			}
-		default:
-			if e != nil {
-				return nil, err
-			}
+			return nil, err
 		}
 
 		result = append(result, versions...)

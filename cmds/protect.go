@@ -22,7 +22,6 @@ import (
 	"log"
 	"math"
 	"net/http"
-	"os"
 	"slices"
 	"sort"
 	"strings"
@@ -30,13 +29,11 @@ import (
 
 	"github.com/google/go-github/v84/github"
 	"github.com/spf13/cobra"
-	"golang.org/x/oauth2"
 	"gomodules.xyz/flags"
 	"gomodules.xyz/sets"
 )
 
 const (
-	skew            = 10 * time.Second
 	teamReviewers   = "reviewers"
 	teamFEReviewers = "fe-reviewers" // frontend
 	teamBEReviewers = "be-reviewers" // backend
@@ -72,20 +69,8 @@ func NewCmdProtect() *cobra.Command {
 }
 
 func runProtect() {
-	token, found := os.LookupEnv("GH_TOOLS_TOKEN")
-	if !found {
-		log.Fatalln("GH_TOOLS_TOKEN env var is not set")
-	}
-
 	ctx := context.Background()
-
-	// Create the http client.
-	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: token},
-	)
-	tc := oauth2.NewClient(ctx, ts)
-
-	client := github.NewClient(tc)
+	client := newGitHubClient(ctx)
 
 	// Get the current user
 	user, _, err := client.Users.Get(ctx, "")
@@ -197,26 +182,13 @@ func ListOrgs(ctx context.Context, client *github.Client, opt *github.ListOption
 	var result []*github.Organization
 	for {
 		orgs, resp, err := client.Organizations.List(ctx, "", opt)
-		switch e := err.(type) {
-		case *github.RateLimitError:
-			time.Sleep(time.Until(e.Rate.Reset.Add(skew)))
-			continue
-		case *github.AbuseRateLimitError:
-			time.Sleep(e.GetRetryAfter())
-			continue
-		case *github.ErrorResponse:
-			if e.Response.StatusCode == http.StatusNotFound {
+		if err != nil {
+			if e, ok := err.(*github.ErrorResponse); ok && e.Response.StatusCode == http.StatusNotFound {
 				log.Println(err)
 				break
-			} else {
-				return nil, err
 			}
-		default:
-			if e != nil {
-				return nil, err
-			}
+			return nil, err
 		}
-
 		result = append(result, orgs...)
 		if resp.NextPage == 0 {
 			break
@@ -244,24 +216,12 @@ func ListRepos(ctx context.Context, client *github.Client, opt *github.Repositor
 	var result []*github.Repository
 	for {
 		repos, resp, err := client.Repositories.ListByAuthenticatedUser(ctx, opt)
-		switch e := err.(type) {
-		case *github.RateLimitError:
-			time.Sleep(time.Until(e.Rate.Reset.Add(skew)))
-			continue
-		case *github.AbuseRateLimitError:
-			time.Sleep(e.GetRetryAfter())
-			continue
-		case *github.ErrorResponse:
-			if e.Response.StatusCode == http.StatusNotFound {
+		if err != nil {
+			if e, ok := err.(*github.ErrorResponse); ok && e.Response.StatusCode == http.StatusNotFound {
 				log.Println(err)
 				break
-			} else {
-				return nil, err
 			}
-		default:
-			if e != nil {
-				return nil, err
-			}
+			return nil, err
 		}
 
 		for idx := range repos {
@@ -285,24 +245,12 @@ func ListOrgRepos(ctx context.Context, client *github.Client, org string, opt *g
 	var result []*github.Repository
 	for {
 		repos, resp, err := client.Repositories.ListByOrg(ctx, org, opt)
-		switch e := err.(type) {
-		case *github.RateLimitError:
-			time.Sleep(time.Until(e.Rate.Reset.Add(skew)))
-			continue
-		case *github.AbuseRateLimitError:
-			time.Sleep(e.GetRetryAfter())
-			continue
-		case *github.ErrorResponse:
-			if e.Response.StatusCode == http.StatusNotFound {
+		if err != nil {
+			if e, ok := err.(*github.ErrorResponse); ok && e.Response.StatusCode == http.StatusNotFound {
 				log.Println(err)
 				break
-			} else {
-				return nil, err
 			}
-		default:
-			if e != nil {
-				return nil, err
-			}
+			return nil, err
 		}
 
 		for idx := range repos {
@@ -332,24 +280,12 @@ func ListBranches(ctx context.Context, client *github.Client, repo *github.Repos
 	var result []*github.Branch
 	for {
 		branch, resp, err := client.Repositories.ListBranches(ctx, repo.Owner.GetLogin(), repo.GetName(), opt)
-		switch e := err.(type) {
-		case *github.RateLimitError:
-			time.Sleep(time.Until(e.Rate.Reset.Add(skew)))
-			continue
-		case *github.AbuseRateLimitError:
-			time.Sleep(e.GetRetryAfter())
-			continue
-		case *github.ErrorResponse:
-			if e.Response.StatusCode == http.StatusNotFound {
+		if err != nil {
+			if e, ok := err.(*github.ErrorResponse); ok && e.Response.StatusCode == http.StatusNotFound {
 				log.Println(err)
 				break
-			} else {
-				return nil, err
 			}
-		default:
-			if e != nil {
-				return nil, err
-			}
+			return nil, err
 		}
 
 		result = append(result, branch...)
@@ -372,16 +308,7 @@ func ProtectRepo(ctx context.Context, client *github.Client, repo *github.Reposi
 			strings.HasPrefix(branch.GetName(), "kubernetes-") ||
 			strings.HasPrefix(branch.GetName(), "ac-") {
 			if err := ProtectBranch(ctx, client, repo.Owner.GetLogin(), repo.GetName(), branch.GetName(), repo.GetPrivate()); err != nil {
-				switch e := err.(type) {
-				case *github.RateLimitError:
-					time.Sleep(time.Until(e.Rate.Reset.Add(skew)))
-					continue
-				case *github.AbuseRateLimitError:
-					time.Sleep(e.GetRetryAfter())
-					continue
-				case *github.ErrorResponse:
-					log.Println("error", err)
-				}
+				log.Println("error", err)
 				return nil // ignore error
 			}
 		}
@@ -495,83 +422,42 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 }
 
 func TeamMaintainsRepo(ctx context.Context, client *github.Client, org, team, repo string) error {
-	for {
-		_, err := client.Teams.AddTeamRepoBySlug(ctx, org, team, org, repo, &github.TeamAddTeamRepoOptions{
-			Permission: "admin",
-		})
-		switch e := err.(type) {
-		case *github.RateLimitError:
-			time.Sleep(time.Until(e.Rate.Reset.Add(skew)))
-			continue
-		case *github.AbuseRateLimitError:
-			time.Sleep(e.GetRetryAfter())
-			continue
-		case *github.ErrorResponse:
-			if e.Response.StatusCode == http.StatusNotFound {
-				log.Println(err)
-				break
-			} else {
-				return err
-			}
-		default:
-			if e != nil {
-				return err
-			}
+	_, err := client.Teams.AddTeamRepoBySlug(ctx, org, team, org, repo, &github.TeamAddTeamRepoOptions{
+		Permission: "admin",
+	})
+	if err != nil {
+		if e, ok := err.(*github.ErrorResponse); ok && e.Response.StatusCode == http.StatusNotFound {
+			log.Println(err)
+			return nil
 		}
-		return nil
+		return err
 	}
+	return nil
 }
 
 func CreateTeamIfMissing(ctx context.Context, client *github.Client, org, team string) (int64, error) {
-GET_TEAM:
-	for {
-		t, _, err := client.Teams.GetTeamBySlug(ctx, org, team)
-		switch e := err.(type) {
-		case *github.RateLimitError:
-			time.Sleep(time.Until(e.Rate.Reset.Add(skew)))
-			continue
-		case *github.AbuseRateLimitError:
-			time.Sleep(e.GetRetryAfter())
-			continue
-		case *github.ErrorResponse:
-			if e.Response.StatusCode == http.StatusNotFound {
-				log.Println(err)
-				break GET_TEAM
-			} else {
-				return 0, err
-			}
-		default:
-			if e != nil {
-				return 0, err
-			}
+	t, _, err := client.Teams.GetTeamBySlug(ctx, org, team)
+	if err != nil {
+		if e, ok := err.(*github.ErrorResponse); ok && e.Response.StatusCode == http.StatusNotFound {
+			log.Println(err)
+		} else {
+			return 0, err
 		}
+	} else {
 		return t.GetID(), nil // team exists
 	}
 
 	privacy := "closed"
-	for {
-		t, _, err := client.Teams.CreateTeam(ctx, org, github.NewTeam{
-			Name: team,
-			Maintainers: []string{
-				"tamalsaha",
-				"1gtm",
-			},
-			Privacy: &privacy,
-		})
-		switch e := err.(type) {
-		case *github.RateLimitError:
-			time.Sleep(time.Until(e.Rate.Reset.Add(skew)))
-			continue
-		case *github.AbuseRateLimitError:
-			time.Sleep(e.GetRetryAfter())
-			continue
-		case *github.ErrorResponse:
-			return 0, err
-		default:
-			if e != nil {
-				return 0, err
-			}
-		}
-		return t.GetID(), nil
+	t, _, err = client.Teams.CreateTeam(ctx, org, github.NewTeam{
+		Name: team,
+		Maintainers: []string{
+			"tamalsaha",
+			"1gtm",
+		},
+		Privacy: &privacy,
+	})
+	if err != nil {
+		return 0, err
 	}
+	return t.GetID(), nil
 }
