@@ -32,7 +32,7 @@ import (
 
 const (
 	defaultSecondaryRetryDelay = time.Minute
-	maxSecondaryRetryDelay     = 15 * time.Minute
+	maxSecondaryRetryDelay     = 60 * time.Minute
 	maxRateLimitRetryAttempts  = 8
 )
 
