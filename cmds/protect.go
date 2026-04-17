@@ -145,6 +145,11 @@ func runProtect() {
 				continue // don't protect personal repos
 			}
 			if repo.GetPermissions().GetAdmin() {
+				err = ConfigureDependabotAlertsNoAutoPRs(ctx, client, repo)
+				if err != nil {
+					log.Fatalln(err)
+				}
+
 				// for appscode org, add repos by hand to team
 				if repo.GetOwner().GetLogin() != "appscode" {
 					err = TeamMaintainsRepo(ctx, client, repo.GetOwner().GetLogin(), teamReviewers, repo.GetName())
@@ -313,6 +318,24 @@ func ProtectRepo(ctx context.Context, client *github.Client, repo *github.Reposi
 			}
 		}
 	}
+	return nil
+}
+
+func ConfigureDependabotAlertsNoAutoPRs(ctx context.Context, client *github.Client, repo *github.Repository) error {
+	if repo == nil || repo.Owner == nil {
+		return fmt.Errorf("invalid repo object")
+	}
+
+	owner := repo.Owner.GetLogin()
+	name := repo.GetName()
+
+	if _, err := client.Repositories.EnableVulnerabilityAlerts(ctx, owner, name); err != nil {
+		return err
+	}
+	if _, err := client.Repositories.DisableAutomatedSecurityFixes(ctx, owner, name); err != nil {
+		return err
+	}
+
 	return nil
 }
 

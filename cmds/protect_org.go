@@ -110,6 +110,11 @@ func runProtectOrg(org string, includeForks bool, skipList []string) {
 			continue
 		}
 
+		err = ConfigureDependabotAlertsNoAutoPRs(ctx, client, repo)
+		if err != nil {
+			log.Fatalln(err)
+		}
+
 		// For appscode org, repos are added to team manually
 		if org != "appscode" {
 			err = TeamMaintainsRepo(ctx, client, org, teamReviewers, repo.GetName())

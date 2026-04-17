@@ -18,6 +18,7 @@ package cmds
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -52,6 +53,14 @@ func runProtectRepo(owner, repo string) {
 	client := newGitHubClient(ctx)
 
 	r, err := GetRepo(ctx, client, owner, repo)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	if r == nil {
+		log.Fatalln(fmt.Errorf("repository %s/%s not found", owner, repo))
+	}
+
+	err = ConfigureDependabotAlertsNoAutoPRs(ctx, client, r)
 	if err != nil {
 		log.Fatalln(err)
 	}
