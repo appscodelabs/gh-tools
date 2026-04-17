@@ -29,7 +29,7 @@ import (
 
 var (
 	enableDependabot    = true
-	enableSecurityFixes = true
+	enableSecurityFixes = false
 )
 
 func NewCmdDependabot() *cobra.Command {
@@ -114,6 +114,10 @@ func processDependabot(ctx context.Context, client *github.Client, repo *github.
 		}
 		if enableSecurityFixes {
 			if _, err := client.Repositories.EnableAutomatedSecurityFixes(ctx, repo.Owner.GetLogin(), repo.GetName()); err != nil {
+				return err
+			}
+		} else {
+			if _, err := client.Repositories.DisableAutomatedSecurityFixes(ctx, repo.Owner.GetLogin(), repo.GetName()); err != nil {
 				return err
 			}
 		}
