@@ -91,8 +91,8 @@ func (t *rateLimitTransport) RoundTrip(req *http.Request) (*http.Response, error
 			return resp, nil
 		}
 
-		delay, ok := rateLimitRetryDelay(resp, attempt)
-		if !ok || attempt >= maxRateLimitRetryAttempts {
+		delay := rateLimitRetryDelay(resp, attempt)
+		if attempt >= maxRateLimitRetryAttempts {
 			return resp, nil
 		}
 		if !canRetryBody {
@@ -115,32 +115,25 @@ func (t *rateLimitTransport) RoundTrip(req *http.Request) (*http.Response, error
 	}
 }
 
-func rateLimitRetryDelay(resp *http.Response, secondaryAttempt int) (time.Duration, bool) {
+func rateLimitRetryDelay(resp *http.Response, secondaryAttempt int) time.Duration {
 	retryAfter := parseRetryAfter(resp.Header.Get("Retry-After"))
 	if retryAfter > 0 {
-		return retryAfter, true
+		return retryAfter
 	}
 
 	remaining := resp.Header.Get("X-RateLimit-Remaining")
 	if remaining == "0" {
 		if reset := parseUnixTime(resp.Header.Get("X-RateLimit-Reset")); !reset.IsZero() {
-			delay := time.Until(reset) + time.Second
-			if delay < time.Second {
-				delay = time.Second
-			}
-			return delay, true
+			return max(time.Until(reset)+time.Second, time.Second)
 		}
 	}
 
 	// Secondary limit guidance from GitHub docs: wait at least 1 minute and increase with backoff.
-	backoff := time.Duration(float64(defaultSecondaryRetryDelay) * math.Pow(2, float64(secondaryAttempt)))
-	if backoff > maxSecondaryRetryDelay {
-		backoff = maxSecondaryRetryDelay
-	}
+	backoff := min(time.Duration(float64(defaultSecondaryRetryDelay)*math.Pow(2, float64(secondaryAttempt))), maxSecondaryRetryDelay)
 	if backoff < time.Second {
 		backoff = time.Second
 	}
-	return backoff, true
+	return backoff
 }
 
 func parseRetryAfter(value string) time.Duration {
@@ -155,10 +148,7 @@ func parseRetryAfter(value string) time.Duration {
 		return time.Duration(seconds) * time.Second
 	}
 	if ts, err := http.ParseTime(value); err == nil {
-		d := time.Until(ts)
-		if d < time.Second {
-			d = time.Second
-		}
+		d := max(time.Until(ts), time.Second)
 		return d
 	}
 	return 0
