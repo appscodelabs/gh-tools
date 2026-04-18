@@ -32,6 +32,7 @@ import (
 
 const (
 	defaultSecondaryRetryDelay = time.Minute
+	defaultServerErrorDelay    = 5 * time.Second
 	maxSecondaryRetryDelay     = 15 * time.Minute
 	maxRateLimitRetryAttempts  = 8
 )
@@ -87,11 +88,17 @@ func (t *rateLimitTransport) RoundTrip(req *http.Request) (*http.Response, error
 		if err != nil {
 			return nil, err
 		}
-		if resp == nil || (resp.StatusCode != http.StatusForbidden && resp.StatusCode != http.StatusTooManyRequests) {
+		if resp == nil {
+			return resp, nil
+		}
+		retryable := resp.StatusCode == http.StatusForbidden ||
+			resp.StatusCode == http.StatusTooManyRequests ||
+			resp.StatusCode == http.StatusInternalServerError
+		if !retryable {
 			return resp, nil
 		}
 
-		delay := rateLimitRetryDelay(resp, attempt)
+		delay := retryDelay(resp, attempt)
 		if attempt >= maxRateLimitRetryAttempts {
 			return resp, nil
 		}
@@ -99,7 +106,11 @@ func (t *rateLimitTransport) RoundTrip(req *http.Request) (*http.Response, error
 			return resp, nil
 		}
 
-		log.Printf("GitHub API rate limited (%d), waiting %s before retry", resp.StatusCode, delay.Round(time.Second))
+		if resp.StatusCode == http.StatusInternalServerError {
+			log.Printf("GitHub API server error (500), waiting %s before retry", delay.Round(time.Second))
+		} else {
+			log.Printf("GitHub API rate limited (%d), waiting %s before retry", resp.StatusCode, delay.Round(time.Second))
+		}
 		_, _ = io.Copy(io.Discard, resp.Body)
 		_ = resp.Body.Close()
 
@@ -113,6 +124,15 @@ func (t *rateLimitTransport) RoundTrip(req *http.Request) (*http.Response, error
 		case <-timer.C:
 		}
 	}
+}
+
+func retryDelay(resp *http.Response, attempt int) time.Duration {
+	// For server errors, use a short exponential backoff (5s, 10s, 20s, …)
+	if resp.StatusCode == http.StatusInternalServerError {
+		backoff := min(time.Duration(float64(defaultServerErrorDelay)*math.Pow(2, float64(attempt))), maxSecondaryRetryDelay)
+		return max(backoff, time.Second)
+	}
+	return rateLimitRetryDelay(resp, attempt)
 }
 
 func rateLimitRetryDelay(resp *http.Response, secondaryAttempt int) time.Duration {
