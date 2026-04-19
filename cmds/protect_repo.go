@@ -33,7 +33,7 @@ func NewCmdProtectRepo() *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:               "protect-repo",
-		Short:             "Protect master and release-* repos",
+		Short:             "Protect master/main, release-*, kubernetes-*, and ac-* branches in a repository",
 		DisableAutoGenTag: true,
 		PersistentPreRun: func(c *cobra.Command, args []string) {
 			flags.PrintFlags(c.Flags())
