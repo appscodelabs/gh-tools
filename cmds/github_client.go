@@ -99,6 +99,7 @@ func (t *rateLimitTransport) RoundTrip(req *http.Request) (*http.Response, error
 		}
 
 		delay := retryDelay(resp, attempt)
+		retryHint := retryDelayHint(resp, attempt)
 		if attempt >= maxRateLimitRetryAttempts {
 			return resp, nil
 		}
@@ -109,7 +110,7 @@ func (t *rateLimitTransport) RoundTrip(req *http.Request) (*http.Response, error
 		if resp.StatusCode == http.StatusInternalServerError {
 			log.Printf("GitHub API server error (500), waiting %s before retry", delay.Round(time.Second))
 		} else {
-			log.Printf("GitHub API rate limited (%d), waiting %s before retry", resp.StatusCode, delay.Round(time.Second))
+			log.Printf("GitHub API rate limited (%d), waiting %s before retry (%s)", resp.StatusCode, delay.Round(time.Second), retryHint)
 		}
 		_, _ = io.Copy(io.Discard, resp.Body)
 		_ = resp.Body.Close()
@@ -132,25 +133,34 @@ func retryDelay(resp *http.Response, attempt int) time.Duration {
 		backoff := min(time.Duration(float64(defaultServerErrorDelay)*math.Pow(2, float64(attempt))), maxSecondaryRetryDelay)
 		return max(backoff, time.Second)
 	}
-	return rateLimitRetryDelay(resp, attempt)
+	delay, _ := rateLimitRetryDelay(resp, attempt)
+	return delay
 }
 
-func rateLimitRetryDelay(resp *http.Response, secondaryAttempt int) time.Duration {
+func retryDelayHint(resp *http.Response, secondaryAttempt int) string {
+	if resp.StatusCode == http.StatusInternalServerError {
+		return "exponential backoff after 500 response"
+	}
+	_, hint := rateLimitRetryDelay(resp, secondaryAttempt)
+	return hint
+}
+
+func rateLimitRetryDelay(resp *http.Response, secondaryAttempt int) (time.Duration, string) {
 	retryAfter := parseRetryAfter(resp.Header.Get("Retry-After"))
 	if retryAfter > 0 {
-		return retryAfter
+		return retryAfter, "from Retry-After header"
 	}
 
 	remaining := resp.Header.Get("X-RateLimit-Remaining")
 	if remaining == "0" {
 		if reset := parseUnixTime(resp.Header.Get("X-RateLimit-Reset")); !reset.IsZero() {
-			return max(time.Until(reset)+time.Second, time.Second)
+			return max(time.Until(reset)+time.Second, time.Second), "from X-RateLimit-Reset header"
 		}
 	}
 
 	// Secondary limit guidance from GitHub docs: wait at least 1 minute and increase with backoff.
 	backoff := max(min(time.Duration(float64(defaultSecondaryRetryDelay)*math.Pow(2, float64(secondaryAttempt))), maxSecondaryRetryDelay), time.Second)
-	return backoff
+	return backoff, "using secondary rate-limit backoff"
 }
 
 func parseRetryAfter(value string) time.Duration {
