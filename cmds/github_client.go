@@ -113,7 +113,7 @@ func (t *rateLimitTransport) RoundTrip(req *http.Request) (*http.Response, error
 			if requestedWait, requestedFrom, ok := requestedRateLimitWait(resp); ok {
 				log.Printf("GitHub API rate limited (%d), waiting %s before retry (%s). GitHub asked to wait %s (%s)", resp.StatusCode, delay.Round(time.Second), retryHint, requestedWait.Round(time.Second), requestedFrom)
 			} else {
-				log.Printf("GitHub API rate limited (%d), waiting %s before retry (%s). GitHub did not specify a wait duration in headers", resp.StatusCode, delay.Round(time.Second), retryHint)
+				log.Printf("GitHub API rate limited (%d), waiting %s before retry (%s)", resp.StatusCode, delay.Round(time.Second), retryHint)
 			}
 		}
 		_, _ = io.Copy(io.Discard, resp.Body)
