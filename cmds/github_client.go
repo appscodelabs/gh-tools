@@ -110,7 +110,11 @@ func (t *rateLimitTransport) RoundTrip(req *http.Request) (*http.Response, error
 		if resp.StatusCode == http.StatusInternalServerError {
 			log.Printf("GitHub API server error (500), waiting %s before retry", delay.Round(time.Second))
 		} else {
-			log.Printf("GitHub API rate limited (%d), waiting %s before retry (%s)", resp.StatusCode, delay.Round(time.Second), retryHint)
+			if requestedWait, requestedFrom, ok := requestedRateLimitWait(resp); ok {
+				log.Printf("GitHub API rate limited (%d), waiting %s before retry (%s). GitHub asked to wait %s (%s)", resp.StatusCode, delay.Round(time.Second), retryHint, requestedWait.Round(time.Second), requestedFrom)
+			} else {
+				log.Printf("GitHub API rate limited (%d), waiting %s before retry (%s). GitHub did not specify a wait duration in headers", resp.StatusCode, delay.Round(time.Second), retryHint)
+			}
 		}
 		_, _ = io.Copy(io.Discard, resp.Body)
 		_ = resp.Body.Close()
@@ -161,6 +165,22 @@ func rateLimitRetryDelay(resp *http.Response, secondaryAttempt int) (time.Durati
 	// Secondary limit guidance from GitHub docs: wait at least 1 minute and increase with backoff.
 	backoff := max(min(time.Duration(float64(defaultSecondaryRetryDelay)*math.Pow(2, float64(secondaryAttempt))), maxSecondaryRetryDelay), time.Second)
 	return backoff, "using secondary rate-limit backoff"
+}
+
+func requestedRateLimitWait(resp *http.Response) (time.Duration, string, bool) {
+	retryAfter := parseRetryAfter(resp.Header.Get("Retry-After"))
+	if retryAfter > 0 {
+		return retryAfter, "Retry-After header", true
+	}
+
+	remaining := resp.Header.Get("X-RateLimit-Remaining")
+	if remaining == "0" {
+		if reset := parseUnixTime(resp.Header.Get("X-RateLimit-Reset")); !reset.IsZero() {
+			return max(time.Until(reset), time.Second), "X-RateLimit-Reset header", true
+		}
+	}
+
+	return 0, "", false
 }
 
 func parseRetryAfter(value string) time.Duration {
