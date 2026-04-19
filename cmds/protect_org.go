@@ -72,6 +72,7 @@ func runProtectOrg(org string, includeForks bool, skipList []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	cacheOrgFreePlan(org, orgInfo.GetPlan().GetName() == "free")
 	fmt.Printf(">>> Processing org: %s (plan: %s)\n", org, orgInfo.GetPlan().GetName())
 
 	// Create reviewers team if missing

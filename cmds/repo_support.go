@@ -22,6 +22,10 @@ import (
 	"github.com/google/go-github/v84/github"
 )
 
+func cacheOrgFreePlan(org string, isFree bool) {
+	freeOrgs[org] = isFree
+}
+
 func repoSupportsProtection(ctx context.Context, client *github.Client, repo *github.Repository) (bool, string, error) {
 	if repo == nil {
 		return false, "repository not found", nil
@@ -55,6 +59,6 @@ func orgUsesFreePlan(ctx context.Context, client *github.Client, org string) (bo
 	}
 
 	isFree := orgInfo.GetPlan().GetName() == "free"
-	freeOrgs[org] = isFree
+	cacheOrgFreePlan(org, isFree)
 	return isFree, nil
 }

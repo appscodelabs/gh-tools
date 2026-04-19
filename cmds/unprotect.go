@@ -177,6 +177,10 @@ func runUnprotectOrg(org string, includeForks bool, skipList []string, rules []s
 	}
 	log.Println("user:", user.GetLogin())
 
+	if _, err := orgUsesFreePlan(ctx, client, org); err != nil {
+		log.Fatalln(err)
+	}
+
 	opt := &github.RepositoryListByOrgOptions{
 		ListOptions: github.ListOptions{PerPage: 50},
 	}

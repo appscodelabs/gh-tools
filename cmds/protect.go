@@ -109,7 +109,7 @@ func runProtect() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			freeOrgs[r.GetLogin()] = r.GetPlan().GetName() == "free"
+			cacheOrgFreePlan(r.GetLogin(), r.GetPlan().GetName() == "free")
 
 			if r.GetLogin() == "appscode" {
 				_, err = CreateTeamIfMissing(ctx, client, r.GetLogin(), teamBEReviewers)
