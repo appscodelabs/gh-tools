@@ -109,7 +109,7 @@ func runProtect() {
 			if err != nil {
 				log.Fatal(err)
 			}
-			freeOrgs[r.GetLogin()] = r.GetPlan().GetName() == "free"
+			cacheOrgFreePlan(r.GetLogin(), r.GetPlan().GetName() == "free")
 
 			if r.GetLogin() == "appscode" {
 				_, err = CreateTeamIfMissing(ctx, client, r.GetLogin(), teamBEReviewers)
@@ -145,16 +145,21 @@ func runProtect() {
 				continue // don't protect personal repos
 			}
 			if repo.GetPermissions().GetAdmin() {
+				supported, reason, err := repoSupportsProtection(ctx, client, repo)
+				if err != nil {
+					log.Fatalln(err)
+				}
+				if !supported {
+					log.Printf("Skipping %s (%s)", repo.GetFullName(), reason)
+					continue
+				}
+
 				// for appscode org, add repos by hand to team
 				if repo.GetOwner().GetLogin() != "appscode" {
 					err = TeamMaintainsRepo(ctx, client, repo.GetOwner().GetLogin(), teamReviewers, repo.GetName())
 					if err != nil {
 						log.Fatalln(err)
 					}
-				}
-
-				if freeOrgs[repo.GetOwner().GetLogin()] && repo.GetPrivate() {
-					continue
 				}
 				if skipRepos.Has(repo.GetFullName()) {
 					continue

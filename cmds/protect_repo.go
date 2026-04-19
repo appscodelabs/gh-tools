@@ -55,6 +55,19 @@ func runProtectRepo(owner, repo string) {
 	if err != nil {
 		log.Fatalln(err)
 	}
+	if r == nil {
+		log.Printf("repository not found: %s/%s", owner, repo)
+		return
+	}
+
+	supported, reason, err := repoSupportsProtection(ctx, client, r)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	if !supported {
+		log.Printf("Skipping %s (%s)", r.GetFullName(), reason)
+		return
+	}
 
 	err = ProtectRepo(ctx, client, r)
 	if err != nil {

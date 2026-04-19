@@ -72,7 +72,7 @@ func runProtectOrg(org string, includeForks bool, skipList []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	isFreeOrg := orgInfo.GetPlan().GetName() == "free"
+	cacheOrgFreePlan(org, orgInfo.GetPlan().GetName() == "free")
 	fmt.Printf(">>> Processing org: %s (plan: %s)\n", org, orgInfo.GetPlan().GetName())
 
 	// Create reviewers team if missing
@@ -110,18 +110,21 @@ func runProtectOrg(org string, includeForks bool, skipList []string) {
 			continue
 		}
 
+		supported, reason, err := repoSupportsProtection(ctx, client, repo)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		if !supported {
+			log.Printf("Skipping %s (%s)", repo.GetFullName(), reason)
+			continue
+		}
+
 		// For appscode org, repos are added to team manually
 		if org != "appscode" {
 			err = TeamMaintainsRepo(ctx, client, org, teamReviewers, repo.GetName())
 			if err != nil {
 				log.Fatalln(err)
 			}
-		}
-
-		// Skip private repos on free orgs (no branch protection available)
-		if isFreeOrg && repo.GetPrivate() {
-			log.Printf("Skipping %s (private repo on free org)", repo.GetFullName())
-			continue
 		}
 
 		if skipRepos.Has(repo.GetName()) {
