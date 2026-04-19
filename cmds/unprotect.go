@@ -96,6 +96,14 @@ func runUnprotect(rules []string, includeFork bool, skipRepos []string, localSha
 		if !repo.GetPermissions().GetAdmin() {
 			continue
 		}
+		supported, reason, err := repoSupportsProtection(ctx, client, repo)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		if !supported {
+			log.Printf("Skipping %s (%s)", repo.GetFullName(), reason)
+			continue
+		}
 		if skipSet.Has(repo.GetFullName()) {
 			continue
 		}
@@ -127,6 +135,15 @@ func runUnprotectRepo(owner, repo string, rules []string) {
 	}
 	if r == nil {
 		log.Printf("repository not found: %s/%s", owner, repo)
+		return
+	}
+
+	supported, reason, err := repoSupportsProtection(ctx, client, r)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	if !supported {
+		log.Printf("Skipping %s (%s)", r.GetFullName(), reason)
 		return
 	}
 
@@ -175,6 +192,14 @@ func runUnprotectOrg(org string, includeForks bool, skipList []string, rules []s
 	for _, repo := range repos {
 		if !repo.GetPermissions().GetAdmin() {
 			log.Printf("Skipping %s (no admin permission)", repo.GetFullName())
+			continue
+		}
+		supported, reason, err := repoSupportsProtection(ctx, client, repo)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		if !supported {
+			log.Printf("Skipping %s (%s)", repo.GetFullName(), reason)
 			continue
 		}
 		if skipRepos.Has(repo.GetName()) {
