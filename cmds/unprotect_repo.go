@@ -17,59 +17,34 @@ limitations under the License.
 package cmds
 
 import (
-	"context"
-	"log"
-	"net/http"
-
-	"github.com/google/go-github/v84/github"
 	"github.com/spf13/cobra"
 	"gomodules.xyz/flags"
 )
 
-func NewCmdProtectRepo() *cobra.Command {
+func NewCmdUnprotectRepo() *cobra.Command {
 	var (
 		owner string
 		repo  string
+		rules []string
 	)
+
 	cmd := &cobra.Command{
-		Use:               "protect-repo",
-		Short:             "Protect master/main, release-*, kubernetes-*, and ac-* branches in a repository",
+		Use:               "unprotect-repo",
+		Short:             "Delete matching rulesets from a repository",
 		DisableAutoGenTag: true,
 		PersistentPreRun: func(c *cobra.Command, args []string) {
 			flags.PrintFlags(c.Flags())
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			runProtectRepo(owner, repo)
+			runUnprotectRepo(owner, repo, rules)
 		},
 	}
+
 	cmd.Flags().StringVar(&owner, "owner", owner, "GitHub user or org name")
 	cmd.Flags().StringVar(&repo, "repo", repo, "GitHub repository name")
+	cmd.Flags().StringSliceVar(&rules, "rule", nil, "Ruleset name to delete (repeatable)")
+	_ = cmd.MarkFlagRequired("owner")
+	_ = cmd.MarkFlagRequired("repo")
+
 	return cmd
-}
-
-func runProtectRepo(owner, repo string) {
-	ctx := context.Background()
-	client := newGitHubClient(ctx)
-
-	r, err := GetRepo(ctx, client, owner, repo)
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	err = ProtectRepo(ctx, client, r)
-	if err != nil {
-		log.Fatalln(err)
-	}
-}
-
-func GetRepo(ctx context.Context, client *github.Client, owner, repo string) (*github.Repository, error) {
-	r, _, err := client.Repositories.Get(ctx, owner, repo)
-	if err != nil {
-		if e, ok := err.(*github.ErrorResponse); ok && e.Response.StatusCode == http.StatusNotFound {
-			log.Println(err)
-			return nil, nil
-		}
-		return nil, err
-	}
-	return r, nil
 }

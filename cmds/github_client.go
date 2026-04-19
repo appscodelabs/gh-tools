@@ -149,10 +149,7 @@ func rateLimitRetryDelay(resp *http.Response, secondaryAttempt int) time.Duratio
 	}
 
 	// Secondary limit guidance from GitHub docs: wait at least 1 minute and increase with backoff.
-	backoff := min(time.Duration(float64(defaultSecondaryRetryDelay)*math.Pow(2, float64(secondaryAttempt))), maxSecondaryRetryDelay)
-	if backoff < time.Second {
-		backoff = time.Second
-	}
+	backoff := max(min(time.Duration(float64(defaultSecondaryRetryDelay)*math.Pow(2, float64(secondaryAttempt))), maxSecondaryRetryDelay), time.Second)
 	return backoff
 }
 

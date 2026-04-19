@@ -36,7 +36,7 @@ func NewCmdProtectOrg() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:               "protect-org",
-		Short:             "Protect master and release-* branches for all repos in an organization",
+		Short:             "Protect master/main, release-*, kubernetes-*, and ac-* branches for all repos in an organization",
 		DisableAutoGenTag: true,
 		PersistentPreRun: func(c *cobra.Command, args []string) {
 			flags.PrintFlags(c.Flags())
