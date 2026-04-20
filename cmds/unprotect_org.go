@@ -32,7 +32,7 @@ func NewCmdUnprotectOrg() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:               "unprotect-org",
-		Short:             "Delete matching rulesets from all repos in an organization",
+		Short:             "Delete matching rulesets and branch protections from all repos in an organization",
 		DisableAutoGenTag: true,
 		PersistentPreRun: func(c *cobra.Command, args []string) {
 			flags.PrintFlags(c.Flags())

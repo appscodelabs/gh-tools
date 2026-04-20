@@ -41,7 +41,7 @@ func NewCmdUnprotect() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:               "unprotect",
-		Short:             "Delete matching rulesets from accessible repositories",
+		Short:             "Delete matching rulesets and branch protections from accessible repositories",
 		DisableAutoGenTag: true,
 		PersistentPreRun: func(c *cobra.Command, args []string) {
 			flags.PrintFlags(c.Flags())
@@ -90,7 +90,8 @@ func runUnprotect(rules []string, deleteAllRules bool, includeFork bool, skipRep
 	skipSet := sets.NewString(skipRepos...)
 	log.Printf("Found %d repositories", len(repos))
 
-	totalDeleted := 0
+	totalRulesetsDeleted := 0
+	totalBranchProtectionsDeleted := 0
 	for _, repo := range repos {
 		if repo.GetOwner().GetType() == OwnerTypeUser {
 			continue
@@ -110,15 +111,21 @@ func runUnprotect(rules []string, deleteAllRules bool, includeFork bool, skipRep
 			continue
 		}
 
-		deleted, err := deleteMatchingRepoRulesets(ctx, client, repo.GetOwner().GetLogin(), repo.GetName(), requestedRules, deleteAllRules)
+		rulesetsDeleted, err := deleteMatchingRepoRulesets(ctx, client, repo.GetOwner().GetLogin(), repo.GetName(), requestedRules, deleteAllRules)
 		if err != nil {
 			log.Fatalln(err)
 		}
-		totalDeleted += deleted
+		totalRulesetsDeleted += rulesetsDeleted
+
+		branchProtectionsDeleted, err := deleteRepoBranchProtections(ctx, client, repo)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		totalBranchProtectionsDeleted += branchProtectionsDeleted
 		time.Sleep(10 * time.Millisecond)
 	}
 
-	log.Printf("deleted %d matching ruleset(s) in total", totalDeleted)
+	log.Printf("deleted %d matching ruleset(s) and %d branch protection rule(s) in total", totalRulesetsDeleted, totalBranchProtectionsDeleted)
 }
 
 func runUnprotectRepo(owner, repo string, rules []string, deleteAllRules bool) {
@@ -149,19 +156,29 @@ func runUnprotectRepo(owner, repo string, rules []string, deleteAllRules bool) {
 		return
 	}
 
-	deleted, err := deleteMatchingRepoRulesets(ctx, client, owner, repo, requestedRules, deleteAllRules)
+	rulesetsDeleted, err := deleteMatchingRepoRulesets(ctx, client, owner, repo, requestedRules, deleteAllRules)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	if deleted == 0 {
+
+	branchProtectionsDeleted, err := deleteRepoBranchProtections(ctx, client, r)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	if rulesetsDeleted == 0 {
 		if deleteAllRules {
 			log.Printf("no rulesets found in %s/%s", owner, repo)
-			return
+		} else {
+			log.Printf("no matching rulesets found in %s/%s for names: %s", owner, repo, strings.Join(sortedRuleNames(requestedRules), ", "))
 		}
-		log.Printf("no matching rulesets found in %s/%s for names: %s", owner, repo, strings.Join(sortedRuleNames(requestedRules), ", "))
+	}
+
+	if rulesetsDeleted == 0 && branchProtectionsDeleted == 0 {
+		log.Printf("nothing to unprotect in %s/%s", owner, repo)
 		return
 	}
-	log.Printf("deleted %d matching ruleset(s)", deleted)
+	log.Printf("deleted %d matching ruleset(s) and %d branch protection rule(s)", rulesetsDeleted, branchProtectionsDeleted)
 }
 
 func runUnprotectOrg(org string, includeForks bool, skipList []string, rules []string, deleteAllRules bool) {
@@ -198,7 +215,8 @@ func runUnprotectOrg(org string, includeForks bool, skipList []string, rules []s
 	skipRepos := sets.NewString(skipList...)
 	log.Printf("Found %d repositories in org %s", len(repos), org)
 
-	totalDeleted := 0
+	totalRulesetsDeleted := 0
+	totalBranchProtectionsDeleted := 0
 	for _, repo := range repos {
 		if !repo.GetPermissions().GetAdmin() {
 			log.Printf("Skipping %s (no admin permission)", repo.GetFullName())
@@ -217,15 +235,21 @@ func runUnprotectOrg(org string, includeForks bool, skipList []string, rules []s
 			continue
 		}
 
-		deleted, err := deleteMatchingRepoRulesets(ctx, client, org, repo.GetName(), requestedRules, deleteAllRules)
+		rulesetsDeleted, err := deleteMatchingRepoRulesets(ctx, client, org, repo.GetName(), requestedRules, deleteAllRules)
 		if err != nil {
 			log.Fatalln(err)
 		}
-		totalDeleted += deleted
+		totalRulesetsDeleted += rulesetsDeleted
+
+		branchProtectionsDeleted, err := deleteRepoBranchProtections(ctx, client, repo)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		totalBranchProtectionsDeleted += branchProtectionsDeleted
 		time.Sleep(10 * time.Millisecond)
 	}
 
-	log.Printf("deleted %d matching ruleset(s) in org %s", totalDeleted, org)
+	log.Printf("deleted %d matching ruleset(s) and %d branch protection rule(s) in org %s", totalRulesetsDeleted, totalBranchProtectionsDeleted, org)
 }
 
 func listRepoRulesets(ctx context.Context, client *github.Client, owner, repo string) ([]*github.RepositoryRuleset, error) {
@@ -275,6 +299,35 @@ func deleteMatchingRepoRulesets(ctx context.Context, client *github.Client, owne
 		if _, err := client.Repositories.DeleteRuleset(ctx, owner, repo, rs.GetID()); err != nil {
 			return deleted, err
 		}
+		deleted++
+	}
+
+	return deleted, nil
+}
+
+func deleteRepoBranchProtections(ctx context.Context, client *github.Client, repo *github.Repository) (int, error) {
+	branches, err := ListBranches(ctx, client, repo)
+	if err != nil {
+		return 0, err
+	}
+
+	deleted := 0
+	for _, branch := range branches {
+		name := branch.GetName()
+		if name != "master" &&
+			!strings.HasPrefix(name, "release-") &&
+			!strings.HasPrefix(name, "kubernetes-") &&
+			!strings.HasPrefix(name, "ac-") {
+			continue
+		}
+
+		if _, err := client.Repositories.RemoveBranchProtection(ctx, repo.Owner.GetLogin(), repo.GetName(), name); err != nil {
+			if e, ok := err.(*github.ErrorResponse); ok && e.Response != nil && e.Response.StatusCode == 404 {
+				continue
+			}
+			return deleted, err
+		}
+		log.Printf("[DELETE] %s/%s branch protection %q", repo.Owner.GetLogin(), repo.GetName(), name)
 		deleted++
 	}
 

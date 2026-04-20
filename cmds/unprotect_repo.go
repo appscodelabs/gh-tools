@@ -31,7 +31,7 @@ func NewCmdUnprotectRepo() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:               "unprotect-repo",
-		Short:             "Delete matching rulesets from a repository",
+		Short:             "Delete matching rulesets and branch protections from a repository",
 		DisableAutoGenTag: true,
 		PersistentPreRun: func(c *cobra.Command, args []string) {
 			flags.PrintFlags(c.Flags())
