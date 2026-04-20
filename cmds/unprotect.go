@@ -32,6 +32,7 @@ import (
 func NewCmdUnprotect() *cobra.Command {
 	var (
 		rules           []string
+		deleteAllRules  bool
 		includeFork     bool
 		skipRepos       []string
 		localShards     int
@@ -46,11 +47,12 @@ func NewCmdUnprotect() *cobra.Command {
 			flags.PrintFlags(c.Flags())
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			runUnprotect(rules, includeFork, skipRepos, localShardIndex, localShards)
+			runUnprotect(rules, deleteAllRules, includeFork, skipRepos, localShardIndex, localShards)
 		},
 	}
 
 	cmd.Flags().StringSliceVar(&rules, "rule", nil, "Ruleset name to delete (repeatable)")
+	cmd.Flags().BoolVar(&deleteAllRules, "all-rules", false, "If true, delete all repository rulesets")
 	cmd.Flags().BoolVar(&includeFork, "fork", false, "If true, include forked repos")
 	cmd.Flags().StringSliceVar(&skipRepos, "skip", nil, "Skip owner/repository")
 	cmd.Flags().IntVar(&localShards, "shards", -1, "Total number of shards")
@@ -59,9 +61,9 @@ func NewCmdUnprotect() *cobra.Command {
 	return cmd
 }
 
-func runUnprotect(rules []string, includeFork bool, skipRepos []string, localShardIndex, localShards int) {
+func runUnprotect(rules []string, deleteAllRules bool, includeFork bool, skipRepos []string, localShardIndex, localShards int) {
 	requestedRules := normalizeRules(rules)
-	if len(requestedRules) == 0 {
+	if !deleteAllRules && len(requestedRules) == 0 {
 		log.Println("WARNING: no --rule names provided, nothing to delete")
 		return
 	}
@@ -108,7 +110,7 @@ func runUnprotect(rules []string, includeFork bool, skipRepos []string, localSha
 			continue
 		}
 
-		deleted, err := deleteMatchingRepoRulesets(ctx, client, repo.GetOwner().GetLogin(), repo.GetName(), requestedRules)
+		deleted, err := deleteMatchingRepoRulesets(ctx, client, repo.GetOwner().GetLogin(), repo.GetName(), requestedRules, deleteAllRules)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -119,9 +121,9 @@ func runUnprotect(rules []string, includeFork bool, skipRepos []string, localSha
 	log.Printf("deleted %d matching ruleset(s) in total", totalDeleted)
 }
 
-func runUnprotectRepo(owner, repo string, rules []string) {
+func runUnprotectRepo(owner, repo string, rules []string, deleteAllRules bool) {
 	requestedRules := normalizeRules(rules)
-	if len(requestedRules) == 0 {
+	if !deleteAllRules && len(requestedRules) == 0 {
 		log.Println("WARNING: no --rule names provided, nothing to delete")
 		return
 	}
@@ -147,20 +149,24 @@ func runUnprotectRepo(owner, repo string, rules []string) {
 		return
 	}
 
-	deleted, err := deleteMatchingRepoRulesets(ctx, client, owner, repo, requestedRules)
+	deleted, err := deleteMatchingRepoRulesets(ctx, client, owner, repo, requestedRules, deleteAllRules)
 	if err != nil {
 		log.Fatalln(err)
 	}
 	if deleted == 0 {
+		if deleteAllRules {
+			log.Printf("no rulesets found in %s/%s", owner, repo)
+			return
+		}
 		log.Printf("no matching rulesets found in %s/%s for names: %s", owner, repo, strings.Join(sortedRuleNames(requestedRules), ", "))
 		return
 	}
 	log.Printf("deleted %d matching ruleset(s)", deleted)
 }
 
-func runUnprotectOrg(org string, includeForks bool, skipList []string, rules []string) {
+func runUnprotectOrg(org string, includeForks bool, skipList []string, rules []string, deleteAllRules bool) {
 	requestedRules := normalizeRules(rules)
-	if len(requestedRules) == 0 {
+	if !deleteAllRules && len(requestedRules) == 0 {
 		log.Println("WARNING: no --rule names provided, nothing to delete")
 		return
 	}
@@ -211,7 +217,7 @@ func runUnprotectOrg(org string, includeForks bool, skipList []string, rules []s
 			continue
 		}
 
-		deleted, err := deleteMatchingRepoRulesets(ctx, client, org, repo.GetName(), requestedRules)
+		deleted, err := deleteMatchingRepoRulesets(ctx, client, org, repo.GetName(), requestedRules, deleteAllRules)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -244,7 +250,7 @@ func listRepoRulesets(ctx context.Context, client *github.Client, owner, repo st
 	return out, nil
 }
 
-func deleteMatchingRepoRulesets(ctx context.Context, client *github.Client, owner, repo string, requestedRules map[string]struct{}) (int, error) {
+func deleteMatchingRepoRulesets(ctx context.Context, client *github.Client, owner, repo string, requestedRules map[string]struct{}, deleteAllRules bool) (int, error) {
 	rulesets, err := listRepoRulesets(ctx, client, owner, repo)
 	if err != nil {
 		return 0, err
@@ -255,11 +261,17 @@ func deleteMatchingRepoRulesets(ctx context.Context, client *github.Client, owne
 		if rs == nil || rs.ID == nil {
 			continue
 		}
-		if _, ok := requestedRules[rs.Name]; !ok {
-			continue
+		if !deleteAllRules {
+			if _, ok := requestedRules[rs.Name]; !ok {
+				continue
+			}
 		}
 
-		log.Printf("[DELETE] %s/%s ruleset %q (%d)", owner, repo, rs.Name, rs.GetID())
+		if deleteAllRules {
+			log.Printf("[DELETE] %s/%s ruleset %q (%d) [all-rules]", owner, repo, rs.Name, rs.GetID())
+		} else {
+			log.Printf("[DELETE] %s/%s ruleset %q (%d)", owner, repo, rs.Name, rs.GetID())
+		}
 		if _, err := client.Repositories.DeleteRuleset(ctx, owner, repo, rs.GetID()); err != nil {
 			return deleted, err
 		}

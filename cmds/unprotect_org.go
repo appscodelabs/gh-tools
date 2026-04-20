@@ -23,10 +23,11 @@ import (
 
 func NewCmdUnprotectOrg() *cobra.Command {
 	var (
-		org         string
-		orgSkipList []string
-		rules       []string
-		includeFork bool
+		org            string
+		orgSkipList    []string
+		rules          []string
+		includeFork    bool
+		deleteAllRules bool
 	)
 
 	cmd := &cobra.Command{
@@ -37,7 +38,7 @@ func NewCmdUnprotectOrg() *cobra.Command {
 			flags.PrintFlags(c.Flags())
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			runUnprotectOrg(org, includeFork, orgSkipList, rules)
+			runUnprotectOrg(org, includeFork, orgSkipList, rules, deleteAllRules)
 		},
 	}
 
@@ -45,6 +46,7 @@ func NewCmdUnprotectOrg() *cobra.Command {
 	cmd.Flags().BoolVar(&includeFork, "fork", false, "If true, include forked repos")
 	cmd.Flags().StringSliceVar(&orgSkipList, "skip", nil, "Skip repositories (repo names without org prefix)")
 	cmd.Flags().StringSliceVar(&rules, "rule", nil, "Ruleset name to delete (repeatable)")
+	cmd.Flags().BoolVar(&deleteAllRules, "all-rules", false, "If true, delete all repository rulesets")
 	_ = cmd.MarkFlagRequired("org")
 
 	return cmd

@@ -23,9 +23,10 @@ import (
 
 func NewCmdUnprotectRepo() *cobra.Command {
 	var (
-		owner string
-		repo  string
-		rules []string
+		owner          string
+		repo           string
+		rules          []string
+		deleteAllRules bool
 	)
 
 	cmd := &cobra.Command{
@@ -36,13 +37,14 @@ func NewCmdUnprotectRepo() *cobra.Command {
 			flags.PrintFlags(c.Flags())
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			runUnprotectRepo(owner, repo, rules)
+			runUnprotectRepo(owner, repo, rules, deleteAllRules)
 		},
 	}
 
 	cmd.Flags().StringVar(&owner, "owner", owner, "GitHub user or org name")
 	cmd.Flags().StringVar(&repo, "repo", repo, "GitHub repository name")
 	cmd.Flags().StringSliceVar(&rules, "rule", nil, "Ruleset name to delete (repeatable)")
+	cmd.Flags().BoolVar(&deleteAllRules, "all-rules", false, "If true, delete all repository rulesets")
 	_ = cmd.MarkFlagRequired("owner")
 	_ = cmd.MarkFlagRequired("repo")
 
