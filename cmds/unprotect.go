@@ -51,8 +51,8 @@ func NewCmdUnprotect() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringSliceVar(&rules, "rule", nil, "Ruleset name to delete (repeatable)")
-	cmd.Flags().BoolVar(&deleteAllRules, "all-rules", false, "If true, delete all repository rulesets")
+	cmd.Flags().StringSliceVar(&rules, "rule", nil, "Rule name to delete (ruleset name or branch name, repeatable)")
+	cmd.Flags().BoolVar(&deleteAllRules, "all-rules", false, "If true, delete all repository rulesets and branch protection rules")
 	cmd.Flags().BoolVar(&includeFork, "fork", false, "If true, include forked repos")
 	cmd.Flags().StringSliceVar(&skipRepos, "skip", nil, "Skip owner/repository")
 	cmd.Flags().IntVar(&localShards, "shards", -1, "Total number of shards")
@@ -117,7 +117,7 @@ func runUnprotect(rules []string, deleteAllRules bool, includeFork bool, skipRep
 		}
 		totalRulesetsDeleted += rulesetsDeleted
 
-		branchProtectionsDeleted, err := deleteRepoBranchProtections(ctx, client, repo)
+		branchProtectionsDeleted, err := deleteRepoBranchProtections(ctx, client, repo, requestedRules, deleteAllRules)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -161,7 +161,7 @@ func runUnprotectRepo(owner, repo string, rules []string, deleteAllRules bool) {
 		log.Fatalln(err)
 	}
 
-	branchProtectionsDeleted, err := deleteRepoBranchProtections(ctx, client, r)
+	branchProtectionsDeleted, err := deleteRepoBranchProtections(ctx, client, r, requestedRules, deleteAllRules)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -241,7 +241,7 @@ func runUnprotectOrg(org string, includeForks bool, skipList []string, rules []s
 		}
 		totalRulesetsDeleted += rulesetsDeleted
 
-		branchProtectionsDeleted, err := deleteRepoBranchProtections(ctx, client, repo)
+		branchProtectionsDeleted, err := deleteRepoBranchProtections(ctx, client, repo, requestedRules, deleteAllRules)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -305,7 +305,7 @@ func deleteMatchingRepoRulesets(ctx context.Context, client *github.Client, owne
 	return deleted, nil
 }
 
-func deleteRepoBranchProtections(ctx context.Context, client *github.Client, repo *github.Repository) (int, error) {
+func deleteRepoBranchProtections(ctx context.Context, client *github.Client, repo *github.Repository, requestedRules map[string]struct{}, deleteAllRules bool) (int, error) {
 	branches, err := ListBranches(ctx, client, repo)
 	if err != nil {
 		return 0, err
@@ -314,11 +314,10 @@ func deleteRepoBranchProtections(ctx context.Context, client *github.Client, rep
 	deleted := 0
 	for _, branch := range branches {
 		name := branch.GetName()
-		if name != "master" &&
-			!strings.HasPrefix(name, "release-") &&
-			!strings.HasPrefix(name, "kubernetes-") &&
-			!strings.HasPrefix(name, "ac-") {
-			continue
+		if !deleteAllRules {
+			if _, ok := requestedRules[name]; !ok {
+				continue
+			}
 		}
 
 		if _, err := client.Repositories.RemoveBranchProtection(ctx, repo.Owner.GetLogin(), repo.GetName(), name); err != nil {
@@ -327,7 +326,11 @@ func deleteRepoBranchProtections(ctx context.Context, client *github.Client, rep
 			}
 			return deleted, err
 		}
-		log.Printf("[DELETE] %s/%s branch protection %q", repo.Owner.GetLogin(), repo.GetName(), name)
+		if deleteAllRules {
+			log.Printf("[DELETE] %s/%s branch protection %q [all-rules]", repo.Owner.GetLogin(), repo.GetName(), name)
+		} else {
+			log.Printf("[DELETE] %s/%s branch protection %q", repo.Owner.GetLogin(), repo.GetName(), name)
+		}
 		deleted++
 	}
 

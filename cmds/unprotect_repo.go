@@ -43,8 +43,8 @@ func NewCmdUnprotectRepo() *cobra.Command {
 
 	cmd.Flags().StringVar(&owner, "owner", owner, "GitHub user or org name")
 	cmd.Flags().StringVar(&repo, "repo", repo, "GitHub repository name")
-	cmd.Flags().StringSliceVar(&rules, "rule", nil, "Ruleset name to delete (repeatable)")
-	cmd.Flags().BoolVar(&deleteAllRules, "all-rules", false, "If true, delete all repository rulesets")
+	cmd.Flags().StringSliceVar(&rules, "rule", nil, "Rule name to delete (ruleset name or branch name, repeatable)")
+	cmd.Flags().BoolVar(&deleteAllRules, "all-rules", false, "If true, delete all repository rulesets and branch protection rules")
 	_ = cmd.MarkFlagRequired("owner")
 	_ = cmd.MarkFlagRequired("repo")
 
