@@ -18,6 +18,7 @@ package cmds
 
 import (
 	"context"
+	"errors"
 	"log"
 	"slices"
 	"strings"
@@ -33,6 +34,7 @@ func NewCmdUnprotect() *cobra.Command {
 	var (
 		rules           []string
 		deleteAllRules  bool
+		bypass          bool
 		includeFork     bool
 		skipRepos       []string
 		localShards     int
@@ -47,12 +49,13 @@ func NewCmdUnprotect() *cobra.Command {
 			flags.PrintFlags(c.Flags())
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			runUnprotect(rules, deleteAllRules, includeFork, skipRepos, localShardIndex, localShards)
+			runUnprotect(rules, deleteAllRules, bypass, includeFork, skipRepos, localShardIndex, localShards)
 		},
 	}
 
 	cmd.Flags().StringSliceVar(&rules, "rule", nil, "Rule name to delete (ruleset name or branch name, repeatable)")
 	cmd.Flags().BoolVar(&deleteAllRules, "all-rules", false, "If true, delete all repository rulesets and branch protection rules")
+	cmd.Flags().BoolVar(&bypass, "bypass", false, "If true, do not delete rules; allow bypassing on matched branch protection rules")
 	cmd.Flags().BoolVar(&includeFork, "fork", false, "If true, include forked repos")
 	cmd.Flags().StringSliceVar(&skipRepos, "skip", nil, "Skip owner/repository")
 	cmd.Flags().IntVar(&localShards, "shards", -1, "Total number of shards")
@@ -61,7 +64,7 @@ func NewCmdUnprotect() *cobra.Command {
 	return cmd
 }
 
-func runUnprotect(rules []string, deleteAllRules bool, includeFork bool, skipRepos []string, localShardIndex, localShards int) {
+func runUnprotect(rules []string, deleteAllRules bool, bypass bool, includeFork bool, skipRepos []string, localShardIndex, localShards int) {
 	requestedRules := normalizeRules(rules)
 	if !deleteAllRules && len(requestedRules) == 0 {
 		log.Println("WARNING: no --rule names provided, nothing to delete")
@@ -110,6 +113,15 @@ func runUnprotect(rules []string, deleteAllRules bool, includeFork bool, skipRep
 		if skipSet.Has(repo.GetFullName()) {
 			continue
 		}
+		if bypass {
+			branchProtectionsUpdated, err := relaxRepoBranchProtectionBypass(ctx, client, repo, requestedRules, deleteAllRules)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			totalBranchProtectionsDeleted += branchProtectionsUpdated
+			time.Sleep(10 * time.Millisecond)
+			continue
+		}
 
 		rulesetsDeleted, err := deleteMatchingRepoRulesets(ctx, client, repo.GetOwner().GetLogin(), repo.GetName(), requestedRules, deleteAllRules)
 		if err != nil {
@@ -124,11 +136,14 @@ func runUnprotect(rules []string, deleteAllRules bool, includeFork bool, skipRep
 		totalBranchProtectionsDeleted += branchProtectionsDeleted
 		time.Sleep(10 * time.Millisecond)
 	}
-
+	if bypass {
+		log.Printf("updated %d branch protection rule(s) to allow bypass", totalBranchProtectionsDeleted)
+		return
+	}
 	log.Printf("deleted %d matching ruleset(s) and %d branch protection rule(s) in total", totalRulesetsDeleted, totalBranchProtectionsDeleted)
 }
 
-func runUnprotectRepo(owner, repo string, rules []string, deleteAllRules bool) {
+func runUnprotectRepo(owner, repo string, rules []string, deleteAllRules bool, bypass bool) {
 	requestedRules := normalizeRules(rules)
 	if !deleteAllRules && len(requestedRules) == 0 {
 		log.Println("WARNING: no --rule names provided, nothing to delete")
@@ -153,6 +168,19 @@ func runUnprotectRepo(owner, repo string, rules []string, deleteAllRules bool) {
 	}
 	if !supported {
 		log.Printf("Skipping %s (%s)", r.GetFullName(), reason)
+		return
+	}
+
+	if bypass {
+		updated, err := relaxRepoBranchProtectionBypass(ctx, client, r, requestedRules, deleteAllRules)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		if updated == 0 {
+			log.Printf("no matching branch protection rules found in %s/%s", owner, repo)
+			return
+		}
+		log.Printf("updated %d branch protection rule(s) to allow bypass", updated)
 		return
 	}
 
@@ -181,7 +209,7 @@ func runUnprotectRepo(owner, repo string, rules []string, deleteAllRules bool) {
 	log.Printf("deleted %d matching ruleset(s) and %d branch protection rule(s)", rulesetsDeleted, branchProtectionsDeleted)
 }
 
-func runUnprotectOrg(org string, includeForks bool, skipList []string, rules []string, deleteAllRules bool) {
+func runUnprotectOrg(org string, includeForks bool, skipList []string, rules []string, deleteAllRules bool, bypass bool) {
 	requestedRules := normalizeRules(rules)
 	if !deleteAllRules && len(requestedRules) == 0 {
 		log.Println("WARNING: no --rule names provided, nothing to delete")
@@ -234,6 +262,15 @@ func runUnprotectOrg(org string, includeForks bool, skipList []string, rules []s
 			log.Printf("Skipping %s (in skip list)", repo.GetFullName())
 			continue
 		}
+		if bypass {
+			branchProtectionsUpdated, err := relaxRepoBranchProtectionBypass(ctx, client, repo, requestedRules, deleteAllRules)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			totalBranchProtectionsDeleted += branchProtectionsUpdated
+			time.Sleep(10 * time.Millisecond)
+			continue
+		}
 
 		rulesetsDeleted, err := deleteMatchingRepoRulesets(ctx, client, org, repo.GetName(), requestedRules, deleteAllRules)
 		if err != nil {
@@ -248,7 +285,10 @@ func runUnprotectOrg(org string, includeForks bool, skipList []string, rules []s
 		totalBranchProtectionsDeleted += branchProtectionsDeleted
 		time.Sleep(10 * time.Millisecond)
 	}
-
+	if bypass {
+		log.Printf("updated %d branch protection rule(s) to allow bypass in org %s", totalBranchProtectionsDeleted, org)
+		return
+	}
 	log.Printf("deleted %d matching ruleset(s) and %d branch protection rule(s) in org %s", totalRulesetsDeleted, totalBranchProtectionsDeleted, org)
 }
 
@@ -335,6 +375,59 @@ func deleteRepoBranchProtections(ctx context.Context, client *github.Client, rep
 	}
 
 	return deleted, nil
+}
+
+func relaxRepoBranchProtectionBypass(ctx context.Context, client *github.Client, repo *github.Repository, requestedRules map[string]struct{}, deleteAllRules bool) (int, error) {
+	branches, err := ListBranches(ctx, client, repo)
+	if err != nil {
+		return 0, err
+	}
+
+	updated := 0
+	for _, branch := range branches {
+		name := branch.GetName()
+		if !deleteAllRules {
+			if _, ok := requestedRules[name]; !ok {
+				continue
+			}
+		}
+
+		if _, err := client.Repositories.RemoveAdminEnforcement(ctx, repo.Owner.GetLogin(), repo.GetName(), name); err != nil {
+			if shouldIgnoreBypassUpdateError(err) {
+				continue
+			}
+			return updated, err
+		}
+		if deleteAllRules {
+			log.Printf("[BYPASS] %s/%s branch protection %q [all-rules]", repo.Owner.GetLogin(), repo.GetName(), name)
+		} else {
+			log.Printf("[BYPASS] %s/%s branch protection %q", repo.Owner.GetLogin(), repo.GetName(), name)
+		}
+		updated++
+	}
+
+	return updated, nil
+}
+
+func shouldIgnoreBypassUpdateError(err error) bool {
+	if errors.Is(err, github.ErrBranchNotProtected) {
+		return true
+	}
+
+	e, ok := err.(*github.ErrorResponse)
+	if !ok || e.Response == nil {
+		return false
+	}
+	if e.Response.StatusCode == 404 {
+		return true
+	}
+	if e.Response.StatusCode == 422 {
+		msg := strings.ToLower(e.Message)
+		if strings.Contains(msg, "not protected") || strings.Contains(msg, "enforce_admins") {
+			return true
+		}
+	}
+	return false
 }
 
 func normalizeRules(rules []string) map[string]struct{} {
