@@ -27,6 +27,7 @@ func NewCmdUnprotectRepo() *cobra.Command {
 		repo           string
 		rules          []string
 		deleteAllRules bool
+		bypass         bool
 	)
 
 	cmd := &cobra.Command{
@@ -37,7 +38,7 @@ func NewCmdUnprotectRepo() *cobra.Command {
 			flags.PrintFlags(c.Flags())
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			runUnprotectRepo(owner, repo, rules, deleteAllRules)
+			runUnprotectRepo(owner, repo, rules, deleteAllRules, bypass)
 		},
 	}
 
@@ -45,6 +46,7 @@ func NewCmdUnprotectRepo() *cobra.Command {
 	cmd.Flags().StringVar(&repo, "repo", repo, "GitHub repository name")
 	cmd.Flags().StringSliceVar(&rules, "rule", nil, "Rule name to delete (ruleset name or branch name, repeatable)")
 	cmd.Flags().BoolVar(&deleteAllRules, "all-rules", false, "If true, delete all repository rulesets and branch protection rules")
+	cmd.Flags().BoolVar(&bypass, "bypass", false, "If true, do not delete rules; allow bypassing on matched branch protection rules")
 	_ = cmd.MarkFlagRequired("owner")
 	_ = cmd.MarkFlagRequired("repo")
 
