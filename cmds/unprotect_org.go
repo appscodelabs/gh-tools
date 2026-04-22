@@ -45,8 +45,8 @@ func NewCmdUnprotectOrg() *cobra.Command {
 	cmd.Flags().StringVar(&org, "org", "", "GitHub organization name (required)")
 	cmd.Flags().BoolVar(&includeFork, "fork", false, "If true, include forked repos")
 	cmd.Flags().StringSliceVar(&orgSkipList, "skip", nil, "Skip repositories (repo names without org prefix)")
-	cmd.Flags().StringSliceVar(&rules, "rule", nil, "Ruleset name to delete (repeatable)")
-	cmd.Flags().BoolVar(&deleteAllRules, "all-rules", false, "If true, delete all repository rulesets")
+	cmd.Flags().StringSliceVar(&rules, "rule", nil, "Rule name to delete (ruleset name or branch name, repeatable)")
+	cmd.Flags().BoolVar(&deleteAllRules, "all-rules", false, "If true, delete all repository rulesets and branch protection rules")
 	_ = cmd.MarkFlagRequired("org")
 
 	return cmd
