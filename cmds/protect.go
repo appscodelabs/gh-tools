@@ -352,7 +352,10 @@ func ProtectBranch(ctx context.Context, client *github.Client, owner, repo, bran
 			RequiredApprovingReviewCount: 1,
 		},
 		EnforceAdmins: !slices.Contains([]string{"docs", "website", "govanityurls"}, repo) &&
-			!slices.Contains([]string{"ops-center/grafana-dashboards"}, fmt.Sprintf("%s/%s", owner, repo)) &&
+			!slices.Contains([]string{
+				"appscode/hugo-product-theme",
+				"ops-center/grafana-dashboards",
+			}, fmt.Sprintf("%s/%s", owner, repo)) &&
 			slices.Contains([]string{"master", "main"}, branch),
 		Restrictions: &github.BranchRestrictionsRequest{
 			Users: make([]string, 1),
