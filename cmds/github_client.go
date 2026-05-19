@@ -24,6 +24,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/google/go-github/v84/github"
@@ -91,31 +92,22 @@ func (t *rateLimitTransport) RoundTrip(req *http.Request) (*http.Response, error
 		if resp == nil {
 			return resp, nil
 		}
-		retryable := resp.StatusCode == http.StatusForbidden ||
-			resp.StatusCode == http.StatusTooManyRequests ||
-			resp.StatusCode == http.StatusInternalServerError
-		if !retryable {
+
+		kind := classifyResponse(resp)
+		if kind == kindNone {
 			return resp, nil
 		}
-
-		delay := retryDelay(resp, attempt)
-		retryHint := retryDelayHint(resp, attempt)
 		if attempt >= maxRateLimitRetryAttempts {
+			log.Printf("GitHub API still failing after %d retries (status=%d); giving up", attempt, resp.StatusCode)
 			return resp, nil
 		}
 		if !canRetryBody {
 			return resp, nil
 		}
 
-		if resp.StatusCode == http.StatusInternalServerError {
-			log.Printf("GitHub API server error (500), waiting %s before retry", delay.Round(time.Second))
-		} else {
-			if requestedWait, requestedFrom, ok := requestedRateLimitWait(resp); ok {
-				log.Printf("GitHub API rate limited (%d), waiting %s before retry (%s). GitHub asked to wait %s (%s)", resp.StatusCode, delay.Round(time.Second), retryHint, requestedWait.Round(time.Second), requestedFrom)
-			} else {
-				log.Printf("GitHub API rate limited (%d), waiting %s before retry (%s)", resp.StatusCode, delay.Round(time.Second), retryHint)
-			}
-		}
+		delay, source := retryDelay(resp, kind, attempt)
+		logRetry(resp, kind, delay, source)
+
 		_, _ = io.Copy(io.Discard, resp.Body)
 		_ = resp.Body.Close()
 
@@ -131,72 +123,106 @@ func (t *rateLimitTransport) RoundTrip(req *http.Request) (*http.Response, error
 	}
 }
 
-func retryDelay(resp *http.Response, attempt int) time.Duration {
-	// For server errors, use a short exponential backoff (5s, 10s, 20s, …)
-	if resp.StatusCode == http.StatusInternalServerError {
-		backoff := min(time.Duration(float64(defaultServerErrorDelay)*math.Pow(2, float64(attempt))), maxSecondaryRetryDelay)
-		return max(backoff, time.Second)
-	}
-	delay, _ := rateLimitRetryDelay(resp, attempt)
-	return delay
-}
+type responseKind int
 
-func retryDelayHint(resp *http.Response, secondaryAttempt int) string {
-	if resp.StatusCode == http.StatusInternalServerError {
-		return "exponential backoff after 500 response"
-	}
-	_, hint := rateLimitRetryDelay(resp, secondaryAttempt)
-	return hint
-}
+const (
+	kindNone responseKind = iota
+	kindPrimaryRateLimit
+	kindSecondaryRateLimit
+	kindServerError
+)
 
-func rateLimitRetryDelay(resp *http.Response, secondaryAttempt int) (time.Duration, string) {
-	retryAfter := parseRetryAfter(resp.Header.Get("Retry-After"))
-	if retryAfter > 0 {
-		return retryAfter, "from Retry-After header"
-	}
-
-	remaining := resp.Header.Get("X-RateLimit-Remaining")
-	if remaining == "0" {
-		if reset := parseUnixTime(resp.Header.Get("X-RateLimit-Reset")); !reset.IsZero() {
-			return max(time.Until(reset)+time.Second, time.Second), "from X-RateLimit-Reset header"
+// classifyResponse decides whether a response is retryable per
+// https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api.
+//
+// A 403/429 is only treated as a rate limit when GitHub provides a Retry-After
+// header or X-RateLimit-Remaining=0. Bare 403s are permission errors and
+// retrying them is wasteful.
+func classifyResponse(resp *http.Response) responseKind {
+	switch resp.StatusCode {
+	case http.StatusForbidden, http.StatusTooManyRequests:
+		hasRetryAfter := resp.Header.Get("Retry-After") != ""
+		exhausted := resp.Header.Get("X-RateLimit-Remaining") == "0"
+		switch {
+		case exhausted:
+			return kindPrimaryRateLimit
+		case hasRetryAfter:
+			return kindSecondaryRateLimit
+		default:
+			return kindNone
 		}
+	case http.StatusInternalServerError,
+		http.StatusBadGateway,
+		http.StatusServiceUnavailable,
+		http.StatusGatewayTimeout:
+		return kindServerError
+	default:
+		return kindNone
 	}
-
-	// Secondary limit guidance from GitHub docs: wait at least 1 minute and increase with backoff.
-	backoff := max(min(time.Duration(float64(defaultSecondaryRetryDelay)*math.Pow(2, float64(secondaryAttempt))), maxSecondaryRetryDelay), time.Second)
-	return backoff, "using secondary rate-limit backoff"
 }
 
-func requestedRateLimitWait(resp *http.Response) (time.Duration, string, bool) {
-	retryAfter := parseRetryAfter(resp.Header.Get("Retry-After"))
-	if retryAfter > 0 {
-		return retryAfter, "Retry-After header", true
+func retryDelay(resp *http.Response, kind responseKind, attempt int) (time.Duration, string) {
+	if d := parseRetryAfter(resp.Header.Get("Retry-After")); d > 0 {
+		return d, "Retry-After header"
 	}
 
-	remaining := resp.Header.Get("X-RateLimit-Remaining")
-	if remaining == "0" {
+	switch kind {
+	case kindPrimaryRateLimit:
 		if reset := parseUnixTime(resp.Header.Get("X-RateLimit-Reset")); !reset.IsZero() {
-			return max(time.Until(reset), time.Second), "X-RateLimit-Reset header", true
+			return max(time.Until(reset)+time.Second, time.Second), "X-RateLimit-Reset header"
 		}
+		return secondaryBackoff(attempt), "rate-limit backoff (no reset header)"
+	case kindSecondaryRateLimit:
+		return secondaryBackoff(attempt), "secondary rate-limit backoff"
+	case kindServerError:
+		return serverErrorBackoff(attempt), "exponential backoff after server error"
+	}
+	return time.Second, ""
+}
+
+// secondaryBackoff implements the GitHub-recommended "at least 1 minute,
+// increase exponentially" backoff for secondary rate limits.
+func secondaryBackoff(attempt int) time.Duration {
+	d := time.Duration(float64(defaultSecondaryRetryDelay) * math.Pow(2, float64(attempt)))
+	return max(min(d, maxSecondaryRetryDelay), defaultSecondaryRetryDelay)
+}
+
+func serverErrorBackoff(attempt int) time.Duration {
+	d := time.Duration(float64(defaultServerErrorDelay) * math.Pow(2, float64(attempt)))
+	return max(min(d, maxSecondaryRetryDelay), time.Second)
+}
+
+func logRetry(resp *http.Response, kind responseKind, delay time.Duration, source string) {
+	rounded := delay.Round(time.Second)
+	resource := resp.Header.Get("X-RateLimit-Resource")
+	suffix := ""
+	if resource != "" {
+		suffix = " resource=" + resource
 	}
 
-	return 0, "", false
+	switch kind {
+	case kindPrimaryRateLimit:
+		log.Printf("GitHub API primary rate limit hit (%d%s); waiting %s before retry (%s)", resp.StatusCode, suffix, rounded, source)
+	case kindSecondaryRateLimit:
+		log.Printf("GitHub API secondary rate limit hit (%d%s); waiting %s before retry (%s)", resp.StatusCode, suffix, rounded, source)
+	case kindServerError:
+		log.Printf("GitHub API server error (%d); waiting %s before retry (%s)", resp.StatusCode, rounded, source)
+	}
 }
 
 func parseRetryAfter(value string) time.Duration {
+	value = strings.TrimSpace(value)
 	if value == "" {
 		return 0
 	}
-	seconds, err := strconv.Atoi(value)
-	if err == nil {
+	if seconds, err := strconv.Atoi(value); err == nil {
 		if seconds < 1 {
 			seconds = 1
 		}
 		return time.Duration(seconds) * time.Second
 	}
 	if ts, err := http.ParseTime(value); err == nil {
-		d := max(time.Until(ts), time.Second)
-		return d
+		return max(time.Until(ts), time.Second)
 	}
 	return 0
 }
