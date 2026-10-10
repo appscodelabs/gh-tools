@@ -83,7 +83,9 @@ func printRepoList(orgs sets.String, orgOwned, fork, ssh bool) {
 			if repo.GetOwner().GetType() == OwnerTypeUser {
 				continue // don't protect personal repos
 			}
-			if repo.GetPermissions().GetAdmin() && (orgs.Len() == 0 || orgs.Has(repo.GetOwner().GetLogin())) {
+			if repo.GetPermissions().GetPull() &&
+				repo.GetPermissions().GetPush() &&
+				(orgs.Len() == 0 || orgs.Has(repo.GetOwner().GetLogin())) {
 				if ssh {
 					listing = append(listing, fmt.Sprintf("git clone git@github.com:%s/%s.git", repo.GetOwner().GetLogin(), repo.GetName()))
 				} else {
